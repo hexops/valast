@@ -140,6 +140,15 @@ three`),
 			},
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
+		/*
+			// TODO: panic: reflect: call of reflect.Value.Interface on zero Value [recovered]
+			{
+				name: "interface_anonymous_nil",
+				input: interface {
+					a() string
+				}(nil),
+			},
+		*/
 		{
 			name: "interface_anonymous",
 			input: &struct {

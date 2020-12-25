@@ -32,6 +32,15 @@ func TestString(t *testing.T) {
 			input: int32(1234),
 			opt:   &Options{Unqualify: true},
 		},
+		{
+			name:  "uintptr",
+			input: uintptr(1234),
+		},
+		{
+			name:  "uintptr_unqualify",
+			input: uintptr(1234),
+			opt:   &Options{Unqualify: true},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

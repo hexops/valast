@@ -19,7 +19,10 @@ type baz struct {
 }
 
 func TestString(t *testing.T) {
-	var bazer test.Bazer = test.NewBaz()
+	var (
+		//interfacePointerBug test.Bazer
+		bazer test.Bazer = test.NewBaz()
+	)
 	tests := []struct {
 		name  string
 		input interface{}
@@ -152,6 +155,20 @@ three`),
 				v error
 			}{v: nil},
 		},
+		/*
+			{
+				// Ensures it does not produce &nil:
+				//
+				// 	./valast_test.go:179:9: cannot take the address of nil
+				// 	./valast_test.go:179:9: use of untyped nil
+				//
+				// TODO: fix above bug; nil pointer deref bug
+				name: "interface_pointer_bug",
+				input: &struct {
+					v *test.Bazer
+				}{v: &interfacePointerBug},
+			},
+		*/
 		{
 			// TODO: bug: pointer to space `& `: `{v: & &test.Baz{Bam: (1.34+0i), zeta: &test.foo{bar: "hello"}}}`
 			name: "interface_pointer",

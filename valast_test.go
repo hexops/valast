@@ -50,6 +50,15 @@ func TestString(t *testing.T) {
 			input: float64(1.234),
 			opt:   &Options{Unqualify: true},
 		},
+		{
+			name:  "complex64",
+			input: complex64(1.234),
+		},
+		{
+			name:  "complex64_unqualify",
+			input: complex64(1.234),
+			opt:   &Options{Unqualify: true},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

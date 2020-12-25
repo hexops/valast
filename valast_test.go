@@ -70,6 +70,13 @@ two
 three`),
 			opt: &Options{Unqualify: true},
 		},
+		{
+			name: "struct_anonymous",
+			input: struct {
+				a, b int
+				V    string
+			}{a: 1, b: 2, V: "efg"},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

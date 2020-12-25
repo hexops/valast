@@ -137,6 +137,16 @@ three`),
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
+			// TODO: value should be unqualified
+			name: "interface_anonymous",
+			input: &struct {
+				v interface {
+					String() string
+					Baz() (err error)
+				}
+			}{v: test.NewBaz()},
+		},
+		{
 			name: "interface_builtin",
 			input: &struct {
 				v error

@@ -140,13 +140,10 @@ three`),
 			},
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
-		/*
-			// TODO: panic: reflect: call of reflect.Value.Interface on zero Value
-			{
-				name:  "nil",
-				input: nil,
-			},
-		*/
+		{
+			name:  "nil",
+			input: nil,
+		},
 		/*
 			// TODO: panic: reflect: call of reflect.Value.Interface on zero Value [recovered]
 			{
@@ -204,7 +201,7 @@ three`),
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != err.Error() {
+			if tst.err != "" && tst.err != err.Error() || tst.err == "" && err != nil {
 				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
 				return
 			}

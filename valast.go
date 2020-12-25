@@ -70,7 +70,11 @@ func String(v reflect.Value, opt *Options) (string, error) {
 	var buf bytes.Buffer
 	ast := AST(v, opt)
 	if ast == nil {
-		return "", fmt.Errorf("valast: cannot convert value of kind:%s type:%T", v.Kind(), v.Interface())
+		var typ = "nil"
+		if v != (reflect.Value{}) {
+			typ = fmt.Sprintf("%T", v.Interface())
+		}
+		return "", fmt.Errorf("valast: cannot convert value of kind:%s type:%s", v.Kind(), typ)
 	}
 	if err := printer.Fprint(&buf, token.NewFileSet(), ast); err != nil {
 		return "", err
@@ -98,6 +102,16 @@ func basicLit(kind token.Token, typ string, v interface{}, opt *Options) ast.Exp
 //
 // Returns nil if the value v is not of a kind that can be converted.
 func AST(v reflect.Value, opt *Options) ast.Expr {
+	if v == (reflect.Value{}) {
+		// Technically this is an invalid reflect.Value, but we handle it to be gracious in the
+		// case of:
+		//
+		//  var x interface{}
+		// 	valast.AST(reflect.ValueOf(x))
+		//
+		return ast.NewIdent("nil")
+	}
+
 	vv := unexported(v)
 	switch vv.Kind() {
 	case reflect.Bool:

@@ -59,6 +59,17 @@ func TestString(t *testing.T) {
 			input: complex64(1.234),
 			opt:   &Options{Unqualify: true},
 		},
+		{
+			name:  "string",
+			input: string("hello \t world"),
+		},
+		{
+			name: "string_unqualify",
+			input: string(`one
+two
+three`),
+			opt: &Options{Unqualify: true},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

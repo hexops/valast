@@ -128,6 +128,15 @@ three`),
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
+			name: "slice",
+			input: []*baz{
+				&baz{Beta: "foo"},
+				&baz{Beta: 123},
+				&baz{Beta: 3},
+			},
+			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
 			name: "interface_builtin",
 			input: &struct {
 				v error

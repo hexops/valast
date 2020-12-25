@@ -1,0 +1,4 @@
+[]*baz{&baz{Beta: interface {
+}{"foo"}}, &baz{Beta: interface {
+}{123}}, &baz{Beta: interface {
+}{3}}}

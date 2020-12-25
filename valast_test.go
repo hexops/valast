@@ -97,6 +97,17 @@ three`),
 			},
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
+		{
+			name: "struct_same_package_exported_only",
+			input: baz{
+				Bam: 1.34,
+				zeta: foo{
+					bar: "hello",
+				},
+			},
+			err: "valast: cannot convert value of kind:struct type:valast.baz",
+			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

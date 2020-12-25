@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/hexops/valast/internal/test"
 )
 
 type foo struct {
@@ -107,6 +108,16 @@ three`),
 			},
 			err: "valast: cannot convert value of kind:struct type:valast.baz",
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			name:  "struct_external_package",
+			input: test.NewBaz(),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "struct_external_package_exported_only",
+			input: test.NewBaz(),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}
 	for _, tst := range tests {

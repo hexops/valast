@@ -41,6 +41,15 @@ func TestString(t *testing.T) {
 			input: uintptr(1234),
 			opt:   &Options{Unqualify: true},
 		},
+		{
+			name:  "float64",
+			input: float64(1.234),
+		},
+		{
+			name:  "float64_unqualify",
+			input: float64(1.234),
+			opt:   &Options{Unqualify: true},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

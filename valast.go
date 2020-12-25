@@ -69,6 +69,7 @@ func String(v reflect.Value, opt *Options) (string, error) {
 	if err := printer.Fprint(&buf, token.NewFileSet(), ast); err != nil {
 		return "", err
 	}
+	// TODO: `printer.Fprint` does not produce gofmt'd output
 	return buf.String(), nil
 }
 
@@ -142,7 +143,13 @@ func AST(v reflect.Value, opt *Options) ast.Expr {
 			Elts: elts,
 		}
 	case reflect.Interface:
-		panic("TODO")
+		if opt.ExportedOnly && !ast.IsExported(vv.Type().Name()) {
+			return nil
+		}
+		return &ast.CompositeLit{
+			Type: typeExpr(vv.Type(), opt),
+			Elts: []ast.Expr{AST(unexported(vv.Elem()), opt)},
+		}
 	case reflect.Map:
 		panic("TODO")
 	case reflect.Ptr:

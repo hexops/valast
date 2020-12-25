@@ -120,11 +120,20 @@ three`),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
+			name: "array",
+			input: [2]*baz{
+				&baz{Beta: "foo"},
+				&baz{Beta: 123},
+			},
+			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
 			name: "interface_builtin",
 			input: &struct {
 				v error
 			}{v: nil},
 		},
+		// TODO: test and handle recursive struct, list, array, pointer
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

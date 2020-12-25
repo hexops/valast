@@ -19,6 +19,7 @@ type baz struct {
 }
 
 func TestString(t *testing.T) {
+	var bazer test.Bazer = test.NewBaz()
 	tests := []struct {
 		name  string
 		input interface{}
@@ -150,6 +151,13 @@ three`),
 			input: &struct {
 				v error
 			}{v: nil},
+		},
+		{
+			// TODO: bug: pointer to space `& `: `{v: & &test.Baz{Bam: (1.34+0i), zeta: &test.foo{bar: "hello"}}}`
+			name: "interface_pointer",
+			input: &struct {
+				v *test.Bazer
+			}{v: &bazer},
 		},
 		{
 			// TODO: `&test.Baz{Bam: (1.34+0i), zeta: &test.foo{bar: "hello"}}` is not valid code because `zeta` is unexported.

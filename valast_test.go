@@ -119,6 +119,12 @@ three`),
 			input: test.NewBaz(),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
+		{
+			name: "interface_builtin",
+			input: &struct {
+				v error
+			}{v: nil},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

@@ -39,6 +39,12 @@ type Options struct {
 	ExportedOnly bool
 }
 
+func (o *Options) withUnqualify() *Options {
+	tmp := *o
+	tmp.Unqualify = true
+	return &tmp
+}
+
 // String converts the value v into the equivalent Go literal syntax. The input must be one of
 // these kinds:
 //
@@ -146,9 +152,12 @@ func AST(v reflect.Value, opt *Options) ast.Expr {
 		if opt.ExportedOnly && !ast.IsExported(vv.Type().Name()) {
 			return nil
 		}
+		if opt.Unqualify {
+			return AST(unexported(vv.Elem()), opt.withUnqualify())
+		}
 		return &ast.CompositeLit{
 			Type: typeExpr(vv.Type(), opt),
-			Elts: []ast.Expr{AST(unexported(vv.Elem()), opt)},
+			Elts: []ast.Expr{AST(unexported(vv.Elem()), opt.withUnqualify())},
 		}
 	case reflect.Map:
 		panic("TODO")
@@ -176,7 +185,7 @@ func AST(v reflect.Value, opt *Options) ast.Expr {
 		}
 		return &ast.CompositeLit{
 			Type: typeExpr(vv.Type(), opt),
-			Elts: structValue(vv, opt),
+			Elts: structValue(vv, opt.withUnqualify()),
 		}
 	case reflect.UnsafePointer:
 		panic("TODO")
@@ -285,10 +294,6 @@ func unexported(v reflect.Value) reflect.Value {
 }
 
 func structValue(v reflect.Value, opt *Options) (elts []ast.Expr) {
-	tmp := *opt
-	tmp.Unqualify = true
-	opt = &tmp
-
 	var keyValueExprs []ast.Expr
 	for i := 0; i < v.NumField(); i++ {
 		if opt.ExportedOnly && !ast.IsExported(v.Type().Field(i).Name) {

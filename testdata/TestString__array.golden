@@ -1,3 +1,1 @@
-[2]*baz{&baz{Beta: interface {
-}{"foo"}}, &baz{Beta: interface {
-}{123}}}
+[2]*baz{&baz{Beta: "foo"}, &baz{Beta: 123}}

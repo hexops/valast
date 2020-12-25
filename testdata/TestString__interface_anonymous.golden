@@ -3,7 +3,4 @@
 		Baz() error
 		String() string
 	}
-}{v: interface {
-	Baz() error
-	String() string
-}{&test.Baz{Bam: (1.34+0i), zeta: &test.foo{bar: "hello"}}}}
+}{v: &test.Baz{Bam: (1.34+0i), zeta: &test.foo{bar: "hello"}}}

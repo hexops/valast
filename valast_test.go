@@ -7,6 +7,16 @@ import (
 	"github.com/hexops/autogold"
 )
 
+type foo struct {
+	bar string
+}
+
+type baz struct {
+	Bam  complex64
+	zeta foo
+	Beta interface{}
+}
+
 func TestString(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -76,6 +86,16 @@ three`),
 				a, b int
 				V    string
 			}{a: 1, b: 2, V: "efg"},
+		},
+		{
+			name: "struct_same_package",
+			input: baz{
+				Bam: 1.34,
+				zeta: foo{
+					bar: "hello",
+				},
+			},
+			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 	}
 	for _, tst := range tests {

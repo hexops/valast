@@ -196,6 +196,13 @@ three`),
 			name:  "unsafe_pointer",
 			input: unsafe.Pointer(uintptr(0xdeadbeef)),
 		},
+		{
+			name: "map",
+			input: map[string]int32{
+				"foo": 32,
+				"bar": 64,
+			},
+		},
 		// TODO: test and handle recursive struct, list, array, pointer
 	}
 	for _, tst := range tests {

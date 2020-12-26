@@ -22,7 +22,8 @@ type Options struct {
 	//  Bar{}            -> Bar{}
 	//  string("foobar") -> "foobar"
 	//
-	// This is set to true automatically when operating within a struct.
+	// This is set to true automatically when operating within a context where type qualification
+	// is definitively not needed, e.g. when producing values for a struct or map.
 	Unqualify bool
 
 	// PackagePath, if non-zero, describes that the literal is being produced within the described
@@ -174,7 +175,20 @@ func AST(v reflect.Value, opt *Options) ast.Expr {
 			Elts: []ast.Expr{AST(unexported(vv.Elem()), opt.withUnqualify())},
 		}
 	case reflect.Map:
-		panic("TODO")
+		// TODO: what if not exported?
+		var keyValueExprs []ast.Expr
+		keys := vv.MapKeys()
+		for _, key := range keys {
+			value := vv.MapIndex(key)
+			keyValueExprs = append(keyValueExprs, &ast.KeyValueExpr{
+				Key:   AST(key, opt.withUnqualify()),
+				Value: AST(value, opt.withUnqualify()),
+			})
+		}
+		return &ast.CompositeLit{
+			Type: typeExpr(vv.Type(), opt.withUnqualify()),
+			Elts: keyValueExprs,
+		}
 	case reflect.Ptr:
 		opt.Unqualify = false
 		if vv.Elem().Kind() == reflect.Interface {
@@ -270,7 +284,11 @@ func typeExpr(v reflect.Type, opt *Options) ast.Expr {
 			Results: &ast.FieldList{List: results},
 		}
 	case reflect.Map:
-		panic("TODO")
+		// TODO: what if not exported?
+		return &ast.MapType{
+			Key:   typeExpr(v.Key(), opt),
+			Value: typeExpr(v.Elem(), opt),
+		}
 	case reflect.Ptr:
 		return &ast.StarExpr{X: typeExpr(v.Elem(), opt)}
 	case reflect.Slice:

@@ -207,7 +207,15 @@ func AST(v reflect.Value, opt *Options) ast.Expr {
 			Elts: structValue(vv, opt.withUnqualify()),
 		}
 	case reflect.UnsafePointer:
-		panic("TODO")
+		return &ast.CallExpr{
+			Fun: &ast.SelectorExpr{X: ast.NewIdent("unsafe"), Sel: ast.NewIdent("Pointer")},
+			Args: []ast.Expr{
+				&ast.CallExpr{
+					Fun:  ast.NewIdent("uintptr"),
+					Args: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("0x%x", v.Pointer())}},
+				},
+			},
+		}
 	default:
 		return nil
 	}

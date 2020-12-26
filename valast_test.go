@@ -3,6 +3,7 @@ package valast
 import (
 	"reflect"
 	"testing"
+	"unsafe"
 
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast/internal/test"
@@ -190,6 +191,10 @@ three`),
 			input: &struct {
 				v test.Bazer
 			}{v: test.NewBaz()},
+		},
+		{
+			name:  "unsafe_pointer",
+			input: unsafe.Pointer(uintptr(0xdeadbeef)),
 		},
 		// TODO: test and handle recursive struct, list, array, pointer
 	}

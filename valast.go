@@ -9,9 +9,9 @@ import (
 	"io"
 	"reflect"
 	"strconv"
-	"strings"
 
 	"github.com/shurcooL/go-goon/bypass"
+	"golang.org/x/tools/go/packages"
 )
 
 // Options describes options for the conversion process.
@@ -38,12 +38,32 @@ type Options struct {
 
 	// ExportedOnly indicates if only exported fields and values should be included.
 	ExportedOnly bool
+
+	// PackagePathToName, if non-nil, is called to convert a Go package path to the package name
+	// written in its source. The default is DefaultPackagePathToName
+	PackagePathToName func(path string) (string, error)
 }
 
 func (o *Options) withUnqualify() *Options {
 	tmp := *o
 	tmp.Unqualify = true
 	return &tmp
+}
+
+func (o *Options) packagePathToName(path string) (string, error) {
+	if o.PackagePathToName != nil {
+		return o.PackagePathToName(path)
+	}
+	return DefaultPackagePathToName(path)
+}
+
+// DefaultPackagePathToName loads the specified package from disk to determine the package name.
+func DefaultPackagePathToName(path string) (string, error) {
+	pkgs, err := packages.Load(&packages.Config{Mode: packages.NeedName}, path)
+	if err != nil {
+		return "", err
+	}
+	return pkgs[0].Name, nil
 }
 
 // String converts the value v into the equivalent Go literal syntax. The input must be one of
@@ -247,7 +267,8 @@ func typeExpr(v reflect.Type, opt *Options) ast.Expr {
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
-				pkgName := packageNameFromPath(v.PkgPath())
+				// TODO: bubble up errors
+				pkgName, _ := opt.packagePathToName(v.PkgPath())
 				if pkgName != opt.PackageName {
 					return &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())}
 				}
@@ -298,7 +319,8 @@ func typeExpr(v reflect.Type, opt *Options) ast.Expr {
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
-				pkgName := packageNameFromPath(v.PkgPath())
+				// TODO: bubble up errors
+				pkgName, _ := opt.packagePathToName(v.PkgPath())
 				if pkgName != opt.PackageName {
 					return &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())}
 				}
@@ -319,16 +341,6 @@ func typeExpr(v reflect.Type, opt *Options) ast.Expr {
 	default:
 		return ast.NewIdent(v.Name())
 	}
-}
-
-// TODO: obviously not always correct
-func packageNameFromPath(path string) string {
-	pkgName := path
-	dot := strings.LastIndexByte(path, '/')
-	if dot != -1 {
-		pkgName = pkgName[dot+1:]
-	}
-	return pkgName
 }
 
 func unexported(v reflect.Value) reflect.Value {

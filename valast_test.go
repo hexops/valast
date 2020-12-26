@@ -171,14 +171,14 @@ three`),
 			// 	./valast_test.go:179:9: cannot take the address of nil
 			// 	./valast_test.go:179:9: use of untyped nil
 			//
-			// TODO: fix above bug
+			// TODO: make this produce an error
 			name: "nil_interface_pointer_bug",
 			input: &struct {
 				v *test.Bazer
 			}{v: &nilInterfacePointerBug},
 		},
 		{
-			// TODO: bug: pointer to space `& `: `{v: & &test.Baz{Bam: (1.34+0i), zeta: &test.foo{bar: "hello"}}}`
+			// TODO: make this produce an error
 			name: "interface_pointer",
 			input: &struct {
 				v *test.Bazer

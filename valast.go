@@ -176,9 +176,14 @@ func AST(v reflect.Value, opt *Options) ast.Expr {
 	case reflect.Map:
 		panic("TODO")
 	case reflect.Ptr:
+		opt.Unqualify = false
+		if vv.Elem().Kind() == reflect.Interface {
+			// Pointer to interface; cannot be created in a single expression.
+			return nil
+		}
 		return &ast.UnaryExpr{
 			Op: token.AND,
-			X:  AST(reflect.Indirect(vv), opt),
+			X:  AST(vv.Elem(), opt),
 		}
 	case reflect.Slice:
 		// TODO: handle unexported
@@ -316,9 +321,13 @@ func structValue(v reflect.Value, opt *Options) (elts []ast.Expr) {
 		if unexported(v.Field(i)).IsZero() {
 			continue
 		}
+		value := AST(unexported(v.Field(i)), opt)
+		if value == nil {
+			continue // TODO: raise error? e.g. pointer to interface
+		}
 		keyValueExprs = append(keyValueExprs, &ast.KeyValueExpr{
 			Key:   ast.NewIdent(v.Type().Field(i).Name),
-			Value: AST(unexported(v.Field(i)), opt),
+			Value: value,
 		})
 	}
 	return keyValueExprs

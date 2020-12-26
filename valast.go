@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/printer"
+	"go/format"
 	"go/token"
 	"io"
 	"reflect"
@@ -97,10 +97,9 @@ func String(v reflect.Value, opt *Options) (string, error) {
 		}
 		return "", fmt.Errorf("valast: cannot convert value of kind:%s type:%s", v.Kind(), typ)
 	}
-	if err := printer.Fprint(&buf, token.NewFileSet(), ast); err != nil {
+	if err := format.Node(&buf, token.NewFileSet(), ast); err != nil {
 		return "", err
 	}
-	// TODO: `printer.Fprint` does not produce gofmt'd output
 	return buf.String(), nil
 }
 

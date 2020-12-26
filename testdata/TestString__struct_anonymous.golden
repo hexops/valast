@@ -1,5 +1,5 @@
 struct {
-	a	int
-	b	int
-	V	string
+	a int
+	b int
+	V string
 }{a: 1, b: 2, V: "efg"}

@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
-	"io"
 	"reflect"
 	"strconv"
 
@@ -101,11 +100,6 @@ func String(v reflect.Value, opt *Options) (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
-}
-
-func fprintf(w io.Writer, format string, a ...interface{}) error {
-	_, err := fmt.Fprintf(w, format, a...)
-	return err
 }
 
 func basicLit(kind token.Token, typ string, v interface{}, opt *Options) ast.Expr {

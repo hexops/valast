@@ -104,12 +104,18 @@ func String(v reflect.Value, opt *Options) (string, error) {
 
 func basicLit(kind token.Token, typ string, v interface{}, opt *Options) Result {
 	if opt.Unqualify {
-		return Result{AST: &ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)}}
+		return Result{
+			AST:                &ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)},
+			ContainsUnexported: false,
+		}
 	}
-	return Result{AST: &ast.CallExpr{
-		Fun:  ast.NewIdent(typ),
-		Args: []ast.Expr{&ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)}},
-	}}
+	return Result{
+		AST: &ast.CallExpr{
+			Fun:  ast.NewIdent(typ),
+			Args: []ast.Expr{&ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)}},
+		},
+		ContainsUnexported: false,
+	}
 }
 
 // Result is a result from converting a Go value into its AST.
@@ -117,6 +123,12 @@ type Result struct {
 	// AST is the actual Go AST expression for the value, or nil if the value could not be
 	// converted.
 	AST ast.Expr
+
+	// ContainsUnexported indicates if the AST contains unexported types, excluding those
+	// defined in the package specified in the Options.
+	//
+	// If Options.ExportedOnly == true, this field signifies if unexported fields were omitted.
+	ContainsUnexported bool
 }
 
 // AST is identical to String, except it returns an AST and other metadata about the AST.
@@ -128,19 +140,28 @@ func AST(v reflect.Value, opt *Options) Result {
 		//  var x interface{}
 		// 	valast.AST(reflect.ValueOf(x))
 		//
-		return Result{AST: ast.NewIdent("nil")}
+		return Result{
+			AST:                ast.NewIdent("nil"),
+			ContainsUnexported: false,
+		}
 	}
 
 	vv := unexported(v)
 	switch vv.Kind() {
 	case reflect.Bool:
 		if opt.Unqualify {
-			return Result{AST: ast.NewIdent(fmt.Sprint(v))}
+			return Result{
+				AST:                ast.NewIdent(fmt.Sprint(v)),
+				ContainsUnexported: false,
+			}
 		}
-		return Result{AST: &ast.CallExpr{
-			Fun:  ast.NewIdent("bool"),
-			Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
-		}}
+		return Result{
+			AST: &ast.CallExpr{
+				Fun:  ast.NewIdent("bool"),
+				Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
+			},
+			ContainsUnexported: false,
+		}
 	case reflect.Int:
 		return basicLit(token.INT, "int", v, opt)
 	case reflect.Int8:
@@ -172,30 +193,38 @@ func AST(v reflect.Value, opt *Options) Result {
 	case reflect.Complex128:
 		return basicLit(token.FLOAT, "complex128", v, opt)
 	case reflect.Array:
-		// TODO: handle unexported
 		var elts []ast.Expr
 		for i := 0; i < vv.Len(); i++ {
 			elem := AST(vv.Index(i), opt)
 			elts = append(elts, elem.AST)
 		}
-		return Result{AST: &ast.CompositeLit{
-			Type: typeExpr(vv.Type(), opt),
-			Elts: elts,
-		}}
+		return Result{
+			AST: &ast.CompositeLit{
+				Type: typeExpr(vv.Type(), opt),
+				Elts: elts,
+			},
+			ContainsUnexported: false, // TODO: can contain unexported
+		}
 	case reflect.Interface:
 		if opt.ExportedOnly && !ast.IsExported(vv.Type().Name()) {
-			return Result{AST: nil}
+			return Result{
+				AST:                nil,
+				ContainsUnexported: true,
+			}
 		}
 		if opt.Unqualify {
 			return AST(unexported(vv.Elem()), opt.withUnqualify())
 		}
 		v := AST(unexported(vv.Elem()), opt)
-		return Result{AST: &ast.CompositeLit{
-			Type: typeExpr(vv.Type(), opt),
-			Elts: []ast.Expr{v.AST},
-		}}
+		return Result{
+			AST: &ast.CompositeLit{
+				Type: typeExpr(vv.Type(), opt),
+				Elts: []ast.Expr{v.AST},
+			},
+			ContainsUnexported: false, // TODO: can contain unexported
+		}
 	case reflect.Map:
-		// TODO: what if not exported?
+		// TODO: stable sorting of map keys
 		var keyValueExprs []ast.Expr
 		keys := vv.MapKeys()
 		for _, key := range keys {
@@ -207,32 +236,42 @@ func AST(v reflect.Value, opt *Options) Result {
 				Value: v.AST,
 			})
 		}
-		return Result{AST: &ast.CompositeLit{
-			Type: typeExpr(vv.Type(), opt.withUnqualify()),
-			Elts: keyValueExprs,
-		}}
+		return Result{
+			AST: &ast.CompositeLit{
+				Type: typeExpr(vv.Type(), opt.withUnqualify()),
+				Elts: keyValueExprs,
+			},
+			ContainsUnexported: false, // TODO: can contain unexported
+		}
 	case reflect.Ptr:
 		opt.Unqualify = false
 		if vv.Elem().Kind() == reflect.Interface {
 			// Pointer to interface; cannot be created in a single expression.
-			return Result{AST: nil}
+			//
+			// TODO: turn this into an error
+			return Result{AST: nil, ContainsUnexported: false}
 		}
 		elem := AST(vv.Elem(), opt)
-		return Result{AST: &ast.UnaryExpr{
-			Op: token.AND,
-			X:  elem.AST,
-		}}
+		return Result{
+			AST: &ast.UnaryExpr{
+				Op: token.AND,
+				X:  elem.AST,
+			},
+			ContainsUnexported: true, // TODO: can contain unexported
+		}
 	case reflect.Slice:
-		// TODO: handle unexported
 		var elts []ast.Expr
 		for i := 0; i < vv.Len(); i++ {
 			elem := AST(vv.Index(i), opt)
 			elts = append(elts, elem.AST)
 		}
-		return Result{AST: &ast.CompositeLit{
-			Type: typeExpr(vv.Type(), opt),
-			Elts: elts,
-		}}
+		return Result{
+			AST: &ast.CompositeLit{
+				Type: typeExpr(vv.Type(), opt),
+				Elts: elts,
+			},
+			ContainsUnexported: true, // TODO: can contain unexported
+		}
 	case reflect.String:
 		// TODO: format long strings, strings with unicode, etc. more nicely
 		return basicLit(token.STRING, "string", strconv.Quote(v.String()), opt)
@@ -240,20 +279,26 @@ func AST(v reflect.Value, opt *Options) Result {
 		if opt.ExportedOnly && !ast.IsExported(vv.Type().Name()) {
 			return Result{AST: nil}
 		}
-		return Result{AST: &ast.CompositeLit{
-			Type: typeExpr(vv.Type(), opt),
-			Elts: structValue(vv, opt.withUnqualify()),
-		}}
+		return Result{
+			AST: &ast.CompositeLit{
+				Type: typeExpr(vv.Type(), opt),
+				Elts: structValue(vv, opt.withUnqualify()),
+			},
+			ContainsUnexported: true, // TODO: can contain unexported
+		}
 	case reflect.UnsafePointer:
-		return Result{AST: &ast.CallExpr{
-			Fun: &ast.SelectorExpr{X: ast.NewIdent("unsafe"), Sel: ast.NewIdent("Pointer")},
-			Args: []ast.Expr{
-				&ast.CallExpr{
-					Fun:  ast.NewIdent("uintptr"),
-					Args: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("0x%x", v.Pointer())}},
+		return Result{
+			AST: &ast.CallExpr{
+				Fun: &ast.SelectorExpr{X: ast.NewIdent("unsafe"), Sel: ast.NewIdent("Pointer")},
+				Args: []ast.Expr{
+					&ast.CallExpr{
+						Fun:  ast.NewIdent("uintptr"),
+						Args: []ast.Expr{&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("0x%x", v.Pointer())}},
+					},
 				},
 			},
-		}}
+			ContainsUnexported: true,
+		}
 	default:
 		return Result{AST: nil}
 	}

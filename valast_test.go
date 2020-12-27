@@ -20,10 +20,6 @@ type baz struct {
 }
 
 func TestString(t *testing.T) {
-	var (
-		nilInterfacePointerBug test.Bazer
-		bazer                  test.Bazer = test.NewBaz()
-	)
 	tests := []struct {
 		name  string
 		input interface{}
@@ -104,25 +100,9 @@ three`),
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			name: "struct_same_package_exported_only",
-			input: baz{
-				Bam: 1.34,
-				zeta: foo{
-					bar: "hello",
-				},
-			},
-			err: "valast: cannot convert value of kind:struct type:valast.baz",
-			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
-		},
-		{
 			name:  "struct_external_package",
 			input: test.NewBaz(),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
-		},
-		{
-			name:  "struct_external_package_exported_only",
-			input: test.NewBaz(),
-			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			name: "array",
@@ -167,25 +147,6 @@ three`),
 			}{v: nil},
 		},
 		{
-			// Ensures it does not produce &nil:
-			//
-			// 	./valast_test.go:179:9: cannot take the address of nil
-			// 	./valast_test.go:179:9: use of untyped nil
-			//
-			// TODO: make this produce an error
-			name: "nil_interface_pointer_bug",
-			input: &struct {
-				v *test.Bazer
-			}{v: &nilInterfacePointerBug},
-		},
-		{
-			// TODO: make this produce an error
-			name: "interface_pointer",
-			input: &struct {
-				v *test.Bazer
-			}{v: &bazer},
-		},
-		{
 			// TODO: `&test.Baz{Bam: (1.34+0i), zeta: &test.foo{bar: "hello"}}` is not valid code because `zeta` is unexported.
 			name: "interface",
 			input: &struct {
@@ -204,6 +165,88 @@ three`),
 			},
 		},
 		// TODO: test and handle recursive struct, list, array, pointer
+	}
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			got, err := String(reflect.ValueOf(tst.input), tst.opt)
+			if tst.err != "" && tst.err != err.Error() || tst.err == "" && err != nil {
+				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
+				return
+			}
+			autogold.Equal(t, got)
+		})
+	}
+}
+
+// TestEdgeCases tests known edge-cases and past bugs that do not fit any of the broader test
+// categories.
+func TestEdgeCases(t *testing.T) {
+	var (
+		nilInterfacePointerBug test.Bazer
+		bazer                  test.Bazer = test.NewBaz()
+	)
+	tests := []struct {
+		name  string
+		input interface{}
+		opt   *Options
+		err   string
+	}{
+		{
+			// TODO: make this produce an error
+			name: "interface_pointer",
+			input: &struct {
+				v *test.Bazer
+			}{v: &bazer},
+		},
+		{
+			// Ensures it does not produce &nil:
+			//
+			// 	./valast_test.go:179:9: cannot take the address of nil
+			// 	./valast_test.go:179:9: use of untyped nil
+			//
+			// TODO: make this produce an error
+			name: "nil_interface_pointer_bug",
+			input: &struct {
+				v *test.Bazer
+			}{v: &nilInterfacePointerBug},
+		},
+	}
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			got, err := String(reflect.ValueOf(tst.input), tst.opt)
+			if tst.err != "" && tst.err != err.Error() || tst.err == "" && err != nil {
+				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
+				return
+			}
+			autogold.Equal(t, got)
+		})
+	}
+}
+
+// TestExportedOnly tests the behavior of Options.ExportedOnly when enabled.
+func TestExportedOnly(t *testing.T) {
+	tests := []struct {
+		name  string
+		input interface{}
+		opt   *Options
+		err   string
+	}{
+		{
+			name: "struct_same_package",
+			input: baz{
+				Bam: 1.34,
+				zeta: foo{
+					bar: "hello",
+				},
+			},
+			err: "valast: cannot convert value of kind:struct type:valast.baz",
+			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			name:  "struct_external_package",
+			input: test.NewBaz(),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

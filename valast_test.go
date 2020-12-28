@@ -248,6 +248,7 @@ func TestExportedOnly(t *testing.T) {
 		unexportedMap        map[string]string
 		unexportedPointer    *int
 		unexportedSlice      []int
+		unexportedString     string
 	)
 	tests := []struct {
 		name  string
@@ -420,6 +421,13 @@ func TestExportedOnly(t *testing.T) {
 			// TODO: BUG: expect nil output
 			name:  "input_slice",
 			input: unexportedSlice{1, 2, 3},
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: string("hello") should be unexportedString("hello")
+			// TODO: BUG: expect nil output
+			name:  "input_string",
+			input: unexportedString("hello"),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}

@@ -233,7 +233,7 @@ func TestExportedOnly(t *testing.T) {
 		err   string
 	}{
 		{
-			name: "struct_same_package",
+			name: "input_struct_same_package",
 			input: baz{
 				Bam: 1.34,
 				zeta: foo{
@@ -244,7 +244,7 @@ func TestExportedOnly(t *testing.T) {
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
-			name:  "struct_external_package",
+			name:  "nested_external_struct_unexported_field_omitted",
 			input: test.NewBaz(),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},

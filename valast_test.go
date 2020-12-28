@@ -246,6 +246,7 @@ func TestExportedOnly(t *testing.T) {
 		unexportedArray      [1]float32
 		unexportedInterface  error
 		unexportedMap        map[string]string
+		unexportedPointer    *int
 	)
 	tests := []struct {
 		name  string
@@ -404,6 +405,13 @@ func TestExportedOnly(t *testing.T) {
 				"a": "b",
 			},
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: produces illegal &nil
+			// TODO: BUG: expect nil output
+			name:  "input_pointer",
+			input: unexportedPointer(nil),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}
 	for _, tst := range tests {

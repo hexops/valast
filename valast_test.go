@@ -19,6 +19,12 @@ type baz struct {
 	Beta interface{}
 }
 
+type ExportedBaz struct {
+	Bam  complex64
+	zeta foo
+	Beta interface{}
+}
+
 func TestString(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -442,10 +448,35 @@ func TestExportedOnly_nested(t *testing.T) {
 		err   string
 	}{
 		{
+			// TODO: bug: expect nil output
 			name:  "external_struct_unexported_field_omitted",
 			input: test.NewBaz(),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
+		/*
+			{
+				// TODO: BUG: nil pointer panic
+				name: "struct_same_package_unexported_field_omitted",
+				input: ExportedBaz{
+					Bam: 1.34,
+					zeta: foo{
+						bar: "hello",
+					},
+				},
+				err: "valast: cannot convert value of kind:struct type:valast.baz",
+				opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+			},
+		*/
+		/*
+			{
+				// TODO: BUG: nil pointer panic
+				name: "interface",
+				input: struct {
+					zeta foo
+				}{zeta: foo{bar: "baz"}},
+				opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+			},
+		*/
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

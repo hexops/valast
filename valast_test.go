@@ -227,29 +227,30 @@ func TestEdgeCases(t *testing.T) {
 // TestExportedOnly tests the behavior of Options.ExportedOnly when enabled.
 func TestExportedOnly(t *testing.T) {
 	type (
-		unexportedBool       bool
-		unexportedInt        int
-		unexportedInt8       int8
-		unexportedInt16      int16
-		unexportedInt32      int32
-		unexportedInt64      int64
-		unexportedUint       uint
-		unexportedUint8      uint8
-		unexportedUint16     uint16
-		unexportedUint32     uint32
-		unexportedUint64     uint64
-		unexportedUintptr    uintptr
-		unexportedFloat32    float32
-		unexportedFloat64    float64
-		unexportedComplex64  complex64
-		unexportedComplex128 complex128
-		unexportedArray      [1]float32
-		unexportedInterface  error
-		unexportedMap        map[string]string
-		unexportedPointer    *int
-		unexportedSlice      []int
-		unexportedString     string
-		unexportedStruct     struct{ A string }
+		unexportedBool          bool
+		unexportedInt           int
+		unexportedInt8          int8
+		unexportedInt16         int16
+		unexportedInt32         int32
+		unexportedInt64         int64
+		unexportedUint          uint
+		unexportedUint8         uint8
+		unexportedUint16        uint16
+		unexportedUint32        uint32
+		unexportedUint64        uint64
+		unexportedUintptr       uintptr
+		unexportedFloat32       float32
+		unexportedFloat64       float64
+		unexportedComplex64     complex64
+		unexportedComplex128    complex128
+		unexportedArray         [1]float32
+		unexportedInterface     error
+		unexportedMap           map[string]string
+		unexportedPointer       *int
+		unexportedSlice         []int
+		unexportedString        string
+		unexportedStruct        struct{ A string }
+		unexportedUnsafePointer unsafe.Pointer
 	)
 	tests := []struct {
 		name  string
@@ -437,6 +438,13 @@ func TestExportedOnly(t *testing.T) {
 			input: unexportedStruct{A: "b"},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 			err:   "valast: cannot convert value of kind:struct type:valast.unexportedStruct",
+		},
+		{
+			// TODO: BUG: unsafe.Pointer(uintptr(0xdeadbeef)) should be unexportedUnsafePointer(unsafe.Pointer(uintptr(0xdeadbeef)))
+			// TODO: BUG: expect nil output
+			name:  "input_unsafe_pointer",
+			input: unexportedUnsafePointer(unsafe.Pointer(uintptr(0xdeadbeef))),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}
 	for _, tst := range tests {

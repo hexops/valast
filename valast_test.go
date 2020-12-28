@@ -227,12 +227,17 @@ func TestEdgeCases(t *testing.T) {
 // TestExportedOnly tests the behavior of Options.ExportedOnly when enabled.
 func TestExportedOnly(t *testing.T) {
 	type (
-		unexportedBool  bool
-		unexportedInt   int
-		unexportedInt8  int8
-		unexportedInt16 int16
-		unexportedInt32 int32
-		unexportedInt64 int64
+		unexportedBool   bool
+		unexportedInt    int
+		unexportedInt8   int8
+		unexportedInt16  int16
+		unexportedInt32  int32
+		unexportedInt64  int64
+		unexportedUint   uint
+		unexportedUint8  uint8
+		unexportedUint16 uint16
+		unexportedUint32 uint32
+		unexportedUint64 uint64
 	)
 	tests := []struct {
 		name  string
@@ -296,6 +301,41 @@ func TestExportedOnly(t *testing.T) {
 			// TODO: BUG: expect nil output
 			name:  "input_int64",
 			input: unexportedInt64(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: not properly typed uint(1) vs. unexportedUint(1)
+			// TODO: BUG: expect nil output
+			name:  "input_uint",
+			input: unexportedUint(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: not properly typed uint8(1) vs. unexportedUint8(1)
+			// TODO: BUG: expect nil output
+			name:  "input_uint8",
+			input: unexportedUint8(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: not properly typed uint16(1) vs. unexportedUint16(1)
+			// TODO: BUG: expect nil output
+			name:  "input_uint16",
+			input: unexportedUint16(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: not properly typed uint32(1) vs. unexportedUint32(1)
+			// TODO: BUG: expect nil output
+			name:  "input_uint32",
+			input: unexportedUint32(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: not properly typed uint64(1) vs. unexportedUint64(1)
+			// TODO: BUG: expect nil output
+			name:  "input_uint64",
+			input: unexportedUint64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}

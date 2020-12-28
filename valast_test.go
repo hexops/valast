@@ -249,6 +249,7 @@ func TestExportedOnly(t *testing.T) {
 		unexportedPointer    *int
 		unexportedSlice      []int
 		unexportedString     string
+		unexportedStruct     struct{ A string }
 	)
 	tests := []struct {
 		name  string
@@ -429,6 +430,13 @@ func TestExportedOnly(t *testing.T) {
 			name:  "input_string",
 			input: unexportedString("hello"),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: expect nil output
+			name:  "input_struct",
+			input: unexportedStruct{A: "b"},
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+			err:   "valast: cannot convert value of kind:struct type:valast.unexportedStruct",
 		},
 	}
 	for _, tst := range tests {

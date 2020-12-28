@@ -245,6 +245,7 @@ func TestExportedOnly(t *testing.T) {
 		unexportedComplex128 complex128
 		unexportedArray      [1]float32
 		unexportedInterface  error
+		unexportedMap        map[string]string
 	)
 	tests := []struct {
 		name  string
@@ -395,6 +396,14 @@ func TestExportedOnly(t *testing.T) {
 			}{V: nil},
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 			err: "valast: cannot convert value of kind:struct type:struct { V valast.unexportedInterface }",
+		},
+		{
+			// TODO: BUG: expect nil output
+			name: "input_map",
+			input: unexportedMap{
+				"a": "b",
+			},
+			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}
 	for _, tst := range tests {

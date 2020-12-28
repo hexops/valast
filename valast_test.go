@@ -197,6 +197,7 @@ func TestEdgeCases(t *testing.T) {
 			input: &struct {
 				v *test.Bazer
 			}{v: &bazer},
+			err: "valast: pointers to interfaces are not allowed, found *test.Bazer",
 		},
 		{
 			// Ensures it does not produce &nil:
@@ -204,11 +205,11 @@ func TestEdgeCases(t *testing.T) {
 			// 	./valast_test.go:179:9: cannot take the address of nil
 			// 	./valast_test.go:179:9: use of untyped nil
 			//
-			// TODO: make this produce an error
 			name: "nil_interface_pointer_bug",
 			input: &struct {
 				v *test.Bazer
 			}{v: &nilInterfacePointerBug},
+			err: "valast: pointers to interfaces are not allowed, found *test.Bazer",
 		},
 	}
 	for _, tst := range tests {

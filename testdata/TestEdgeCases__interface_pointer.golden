@@ -1,3 +1,0 @@
-&struct {
-	v *test.Bazer
-}{}

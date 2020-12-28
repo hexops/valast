@@ -88,7 +88,10 @@ func String(v reflect.Value, opt *Options) (string, error) {
 		opt = &Options{}
 	}
 	var buf bytes.Buffer
-	result := AST(v, opt)
+	result, err := AST(v, opt)
+	if err != nil {
+		return "", err
+	}
 	if result.AST == nil {
 		var typ = "nil"
 		if v != (reflect.Value{}) {
@@ -102,12 +105,12 @@ func String(v reflect.Value, opt *Options) (string, error) {
 	return buf.String(), nil
 }
 
-func basicLit(kind token.Token, typ string, v interface{}, opt *Options) Result {
+func basicLit(kind token.Token, typ string, v interface{}, opt *Options) (Result, error) {
 	if opt.Unqualify {
 		return Result{
 			AST:                &ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)},
 			ContainsUnexported: false,
-		}
+		}, nil
 	}
 	return Result{
 		AST: &ast.CallExpr{
@@ -115,7 +118,19 @@ func basicLit(kind token.Token, typ string, v interface{}, opt *Options) Result 
 			Args: []ast.Expr{&ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)}},
 		},
 		ContainsUnexported: false,
-	}
+	}, nil
+}
+
+// ErrPointerToInterface describes that a pointer to an interface was encountered, such values are
+// impossible to create in a single Go expression and thus not supported by valast.
+type ErrPointerToInterface struct {
+	// Value is the actual pointer to the interface that was found.
+	Value interface{}
+}
+
+// Error implements the error interface.
+func (e *ErrPointerToInterface) Error() string {
+	return fmt.Sprintf("valast: pointers to interfaces are not allowed, found %T", e.Value)
 }
 
 // Result is a result from converting a Go value into its AST.
@@ -133,7 +148,7 @@ type Result struct {
 }
 
 // AST is identical to String, except it returns an AST and other metadata about the AST.
-func AST(v reflect.Value, opt *Options) Result {
+func AST(v reflect.Value, opt *Options) (Result, error) {
 	if v == (reflect.Value{}) {
 		// Technically this is an invalid reflect.Value, but we handle it to be gracious in the
 		// case of:
@@ -144,7 +159,7 @@ func AST(v reflect.Value, opt *Options) Result {
 		return Result{
 			AST:                ast.NewIdent("nil"),
 			ContainsUnexported: false,
-		}
+		}, nil
 	}
 
 	vv := unexported(v)
@@ -154,7 +169,7 @@ func AST(v reflect.Value, opt *Options) Result {
 			return Result{
 				AST:                ast.NewIdent(fmt.Sprint(v)),
 				ContainsUnexported: false,
-			}
+			}, nil
 		}
 		return Result{
 			AST: &ast.CallExpr{
@@ -162,7 +177,7 @@ func AST(v reflect.Value, opt *Options) Result {
 				Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
 			},
 			ContainsUnexported: false,
-		}
+		}, nil
 	case reflect.Int:
 		return basicLit(token.INT, "int", v, opt)
 	case reflect.Int8:
@@ -199,7 +214,10 @@ func AST(v reflect.Value, opt *Options) Result {
 			containsUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
-			elem := AST(vv.Index(i), opt)
+			elem, err := AST(vv.Index(i), opt)
+			if err != nil {
+				return Result{}, err
+			}
 			if elem.ContainsUnexported {
 				containsUnexported = true
 			}
@@ -212,18 +230,21 @@ func AST(v reflect.Value, opt *Options) Result {
 				Elts: elts,
 			},
 			ContainsUnexported: arrayType.ContainsUnexported || containsUnexported,
-		}
+		}, nil
 	case reflect.Interface:
 		if opt.ExportedOnly && !ast.IsExported(vv.Type().Name()) {
 			return Result{
 				AST:                nil,
 				ContainsUnexported: true,
-			}
+			}, nil
 		}
 		if opt.Unqualify {
 			return AST(unexported(vv.Elem()), opt.withUnqualify())
 		}
-		v := AST(unexported(vv.Elem()), opt)
+		v, err := AST(unexported(vv.Elem()), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		interfaceType := typeExpr(vv.Type(), opt)
 		return Result{
 			AST: &ast.CompositeLit{
@@ -231,7 +252,7 @@ func AST(v reflect.Value, opt *Options) Result {
 				Elts: []ast.Expr{v.AST},
 			},
 			ContainsUnexported: interfaceType.ContainsUnexported || v.ContainsUnexported,
-		}
+		}, nil
 	case reflect.Map:
 		// TODO: stable sorting of map keys
 		var (
@@ -241,11 +262,17 @@ func AST(v reflect.Value, opt *Options) Result {
 		)
 		for _, key := range keys {
 			value := vv.MapIndex(key)
-			k := AST(key, opt.withUnqualify())
+			k, err := AST(key, opt.withUnqualify())
+			if err != nil {
+				return Result{}, err
+			}
 			if k.ContainsUnexported {
 				containsUnexported = true
 			}
-			v := AST(value, opt.withUnqualify())
+			v, err := AST(value, opt.withUnqualify())
+			if err != nil {
+				return Result{}, err
+			}
 			if v.ContainsUnexported {
 				containsUnexported = true
 			}
@@ -261,30 +288,34 @@ func AST(v reflect.Value, opt *Options) Result {
 				Elts: keyValueExprs,
 			},
 			ContainsUnexported: containsUnexported || mapType.ContainsUnexported,
-		}
+		}, nil
 	case reflect.Ptr:
 		opt.Unqualify = false
 		if vv.Elem().Kind() == reflect.Interface {
 			// Pointer to interface; cannot be created in a single expression.
-			//
-			// TODO: turn this into an error
-			return Result{AST: nil, ContainsUnexported: false}
+			return Result{AST: nil, ContainsUnexported: false}, &ErrPointerToInterface{Value: vv.Interface()}
 		}
-		elem := AST(vv.Elem(), opt)
+		elem, err := AST(vv.Elem(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST: &ast.UnaryExpr{
 				Op: token.AND,
 				X:  elem.AST,
 			},
 			ContainsUnexported: elem.ContainsUnexported,
-		}
+		}, nil
 	case reflect.Slice:
 		var (
 			elts               []ast.Expr
 			containsUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
-			elem := AST(vv.Index(i), opt)
+			elem, err := AST(vv.Index(i), opt)
+			if err != nil {
+				return Result{}, err
+			}
 			if elem.ContainsUnexported {
 				containsUnexported = true
 			}
@@ -297,13 +328,13 @@ func AST(v reflect.Value, opt *Options) Result {
 				Elts: elts,
 			},
 			ContainsUnexported: containsUnexported || sliceType.ContainsUnexported,
-		}
+		}, nil
 	case reflect.String:
 		// TODO: format long strings, strings with unicode, etc. more nicely
 		return basicLit(token.STRING, "string", strconv.Quote(v.String()), opt)
 	case reflect.Struct:
 		if opt.ExportedOnly && !ast.IsExported(vv.Type().Name()) {
-			return Result{AST: nil}
+			return Result{AST: nil}, nil
 		}
 		var (
 			structValue        []ast.Expr
@@ -316,7 +347,10 @@ func AST(v reflect.Value, opt *Options) Result {
 			if unexported(v.Field(i)).IsZero() {
 				continue
 			}
-			value := AST(unexported(v.Field(i)), opt.withUnqualify())
+			value, err := AST(unexported(v.Field(i)), opt.withUnqualify())
+			if err != nil {
+				return Result{}, err
+			}
 			if value.ContainsUnexported {
 				containsUnexported = true
 			}
@@ -335,7 +369,7 @@ func AST(v reflect.Value, opt *Options) Result {
 				Elts: structValue,
 			},
 			ContainsUnexported: structType.ContainsUnexported || containsUnexported,
-		}
+		}, nil
 	case reflect.UnsafePointer:
 		return Result{
 			AST: &ast.CallExpr{
@@ -348,10 +382,10 @@ func AST(v reflect.Value, opt *Options) Result {
 				},
 			},
 			ContainsUnexported: false,
-		}
+		}, nil
 	default:
 		// TODO: make this an error
-		return Result{AST: nil}
+		return Result{AST: nil}, nil
 	}
 }
 

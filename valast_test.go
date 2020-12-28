@@ -227,17 +227,18 @@ func TestEdgeCases(t *testing.T) {
 // TestExportedOnly tests the behavior of Options.ExportedOnly when enabled.
 func TestExportedOnly(t *testing.T) {
 	type (
-		unexportedBool   bool
-		unexportedInt    int
-		unexportedInt8   int8
-		unexportedInt16  int16
-		unexportedInt32  int32
-		unexportedInt64  int64
-		unexportedUint   uint
-		unexportedUint8  uint8
-		unexportedUint16 uint16
-		unexportedUint32 uint32
-		unexportedUint64 uint64
+		unexportedBool    bool
+		unexportedInt     int
+		unexportedInt8    int8
+		unexportedInt16   int16
+		unexportedInt32   int32
+		unexportedInt64   int64
+		unexportedUint    uint
+		unexportedUint8   uint8
+		unexportedUint16  uint16
+		unexportedUint32  uint32
+		unexportedUint64  uint64
+		unexportedUintptr uintptr
 	)
 	tests := []struct {
 		name  string
@@ -336,6 +337,13 @@ func TestExportedOnly(t *testing.T) {
 			// TODO: BUG: expect nil output
 			name:  "input_uint64",
 			input: unexportedUint64(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: not properly typed uintptr(1) vs. unexportedUintptr(1)
+			// TODO: BUG: expect nil output
+			name:  "input_uintptr",
+			input: unexportedUintptr(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}

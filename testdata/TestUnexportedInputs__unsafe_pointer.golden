@@ -1,0 +1,1 @@
+unsafe.Pointer(uintptr(0xdeadbeef))

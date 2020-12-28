@@ -243,6 +243,7 @@ func TestExportedOnly(t *testing.T) {
 		unexportedFloat64    float64
 		unexportedComplex64  complex64
 		unexportedComplex128 complex128
+		unexportedArray      [1]float32
 	)
 	tests := []struct {
 		name  string
@@ -376,6 +377,13 @@ func TestExportedOnly(t *testing.T) {
 			// TODO: BUG: expect nil output
 			name:  "input_complex128",
 			input: unexportedComplex128(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: expect nil output
+			// TODO: BUG: [1]float32{float32(1)} should be [1]float32{1}
+			name:  "input_array",
+			input: unexportedArray{1.0},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}

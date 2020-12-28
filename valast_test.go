@@ -224,8 +224,8 @@ func TestEdgeCases(t *testing.T) {
 	}
 }
 
-// TestExportedOnly tests the behavior of Options.ExportedOnly when enabled.
-func TestExportedOnly(t *testing.T) {
+// TestExportedOnly_input tests the behavior of Options.ExportedOnly when enabled with a direct unexported input.
+func TestExportedOnly_input(t *testing.T) {
 	type (
 		unexportedBool          bool
 		unexportedInt           int
@@ -259,7 +259,7 @@ func TestExportedOnly(t *testing.T) {
 		err   string
 	}{
 		{
-			name: "input_struct_same_package",
+			name: "struct_same_package",
 			input: baz{
 				Bam: 1.34,
 				zeta: foo{
@@ -270,115 +270,110 @@ func TestExportedOnly(t *testing.T) {
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
-			name:  "nested_external_struct_unexported_field_omitted",
-			input: test.NewBaz(),
-			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
-		},
-		{
 			// TODO: BUG: expect nil output
-			name:  "input_bool",
+			name:  "bool",
 			input: unexportedBool(true),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_int",
+			name:  "int",
 			input: unexportedInt(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_int8",
+			name:  "int8",
 			input: unexportedInt8(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_int16",
+			name:  "int16",
 			input: unexportedInt16(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_int32",
+			name:  "int32",
 			input: unexportedInt32(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_int64",
+			name:  "int64",
 			input: unexportedInt64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_uint",
+			name:  "uint",
 			input: unexportedUint(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_uint8",
+			name:  "uint8",
 			input: unexportedUint8(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_uint16",
+			name:  "uint16",
 			input: unexportedUint16(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_uint32",
+			name:  "uint32",
 			input: unexportedUint32(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_uint64",
+			name:  "uint64",
 			input: unexportedUint64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_uintptr",
+			name:  "uintptr",
 			input: unexportedUintptr(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_float32",
+			name:  "float32",
 			input: unexportedFloat32(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_float64",
+			name:  "float64",
 			input: unexportedFloat64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_complex64",
+			name:  "complex64",
 			input: unexportedComplex64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_complex128",
+			name:  "complex128",
 			input: unexportedComplex128(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_array",
+			name:  "array",
 			input: unexportedArray{1.0},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name: "input_interface",
+			name: "interface",
 			input: struct {
 				V unexportedInterface
 			}{V: nil},
@@ -387,7 +382,7 @@ func TestExportedOnly(t *testing.T) {
 		},
 		{
 			// TODO: BUG: expect nil output
-			name: "input_map",
+			name: "map",
 			input: unexportedMap{
 				"a": "b",
 			},
@@ -395,33 +390,60 @@ func TestExportedOnly(t *testing.T) {
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_pointer",
+			name:  "pointer",
 			input: unexportedPointer(nil),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_slice",
+			name:  "slice",
 			input: unexportedSlice{1, 2, 3},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_string",
+			name:  "string",
 			input: unexportedString("hello"),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_struct",
+			name:  "struct",
 			input: unexportedStruct{A: "b"},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 			err:   "valast: cannot convert value of kind:struct type:valast.unexportedStruct",
 		},
 		{
 			// TODO: BUG: expect nil output
-			name:  "input_unsafe_pointer",
+			name:  "unsafe_pointer",
 			input: unexportedUnsafePointer(unsafe.Pointer(uintptr(0xdeadbeef))),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+	}
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			got, err := String(reflect.ValueOf(tst.input), tst.opt)
+			if tst.err != "" && tst.err != err.Error() || tst.err == "" && err != nil {
+				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
+				return
+			}
+			autogold.Equal(t, got)
+		})
+	}
+}
+
+// TestExportedOnly_nested tests the behavior of Options.ExportedOnly when enabled with an unexported
+// value/type nested below an exported one.
+func TestExportedOnly_nested(t *testing.T) {
+	tests := []struct {
+		name  string
+		input interface{}
+		opt   *Options
+		err   string
+	}{
+		{
+			name:  "external_struct_unexported_field_omitted",
+			input: test.NewBaz(),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}

@@ -247,6 +247,7 @@ func TestExportedOnly(t *testing.T) {
 		unexportedInterface  error
 		unexportedMap        map[string]string
 		unexportedPointer    *int
+		unexportedSlice      []int
 	)
 	tests := []struct {
 		name  string
@@ -399,6 +400,7 @@ func TestExportedOnly(t *testing.T) {
 			err: "valast: cannot convert value of kind:struct type:struct { V valast.unexportedInterface }",
 		},
 		{
+			// TODO: BUG: map[string]string{"a": "b"} should be unexportedMap{"a": "b"}
 			// TODO: BUG: expect nil output
 			name: "input_map",
 			input: unexportedMap{
@@ -411,6 +413,13 @@ func TestExportedOnly(t *testing.T) {
 			// TODO: BUG: expect nil output
 			name:  "input_pointer",
 			input: unexportedPointer(nil),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: []int{int(1), int(2), int(3)} should be []unexportedSlice{1, 2, 3}
+			// TODO: BUG: expect nil output
+			name:  "input_slice",
+			input: unexportedSlice{1, 2, 3},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}

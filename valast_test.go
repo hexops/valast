@@ -239,6 +239,8 @@ func TestExportedOnly(t *testing.T) {
 		unexportedUint32  uint32
 		unexportedUint64  uint64
 		unexportedUintptr uintptr
+		unexportedFloat32 float32
+		unexportedFloat64 float64
 	)
 	tests := []struct {
 		name  string
@@ -344,6 +346,20 @@ func TestExportedOnly(t *testing.T) {
 			// TODO: BUG: expect nil output
 			name:  "input_uintptr",
 			input: unexportedUintptr(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: not properly typed float32(1) vs. unexportedFloat32(1)
+			// TODO: BUG: expect nil output
+			name:  "input_float32",
+			input: unexportedFloat32(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: not properly typed float64(1) vs. unexportedFloat64(1)
+			// TODO: BUG: expect nil output
+			name:  "input_float64",
+			input: unexportedFloat64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}

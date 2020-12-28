@@ -227,7 +227,12 @@ func TestEdgeCases(t *testing.T) {
 // TestExportedOnly tests the behavior of Options.ExportedOnly when enabled.
 func TestExportedOnly(t *testing.T) {
 	type (
-		unexportedBool bool
+		unexportedBool  bool
+		unexportedInt   int
+		unexportedInt8  int8
+		unexportedInt16 int16
+		unexportedInt32 int32
+		unexportedInt64 int64
 	)
 	tests := []struct {
 		name  string
@@ -258,6 +263,13 @@ func TestExportedOnly(t *testing.T) {
 			input: unexportedBool(true),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
+		{
+			// TODO: BUG: not properly typed int(1) vs. unexportedInt(1)
+			// TODO: BUG: expect nil output
+			name:  "input_int",
+			input: unexportedInt(1),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
@@ -270,3 +282,24 @@ func TestExportedOnly(t *testing.T) {
 		})
 	}
 }
+
+/*
+case reflect.Uint:
+case reflect.Uint8:
+case reflect.Uint16:
+case reflect.Uint32:
+case reflect.Uint64:
+case reflect.Uintptr:
+case reflect.Float32:
+case reflect.Float64:
+case reflect.Complex64:
+case reflect.Complex128:
+case reflect.Array:
+case reflect.Interface:
+case reflect.Map:
+case reflect.Ptr:
+case reflect.Slice:
+case reflect.String:
+case reflect.Struct:
+case reflect.UnsafePointer:
+*/

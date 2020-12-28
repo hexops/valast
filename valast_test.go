@@ -226,6 +226,9 @@ func TestEdgeCases(t *testing.T) {
 
 // TestExportedOnly tests the behavior of Options.ExportedOnly when enabled.
 func TestExportedOnly(t *testing.T) {
+	type (
+		unexportedBool bool
+	)
 	tests := []struct {
 		name  string
 		input interface{}
@@ -246,6 +249,13 @@ func TestExportedOnly(t *testing.T) {
 		{
 			name:  "nested_external_struct_unexported_field_omitted",
 			input: test.NewBaz(),
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
+		},
+		{
+			// TODO: BUG: not properly typed bool(true) vs. unexportedBool(true)
+			// TODO: BUG: expect nil output
+			name:  "input_bool",
+			input: unexportedBool(true),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 	}

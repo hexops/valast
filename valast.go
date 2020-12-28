@@ -121,6 +121,17 @@ func basicLit(kind token.Token, typ string, v interface{}, opt *Options) (Result
 	}, nil
 }
 
+// ErrInvalidType describes that the value is of a type that cannot be converted to an AST.
+type ErrInvalidType struct {
+	// Value is the actual value that was being converted.
+	Value interface{}
+}
+
+// Error implements the error interface.
+func (e *ErrInvalidType) Error() string {
+	return fmt.Sprintf("valast: cannot convert value of type %T", e.Value)
+}
+
 // ErrPointerToInterface describes that a pointer to an interface was encountered, such values are
 // impossible to create in a single Go expression and thus not supported by valast.
 type ErrPointerToInterface struct {
@@ -135,8 +146,9 @@ func (e *ErrPointerToInterface) Error() string {
 
 // Result is a result from converting a Go value into its AST.
 type Result struct {
-	// AST is the actual Go AST expression for the value, or nil if the value could not be
-	// converted.
+	// AST is the actual Go AST expression for the value.
+	//
+	// If Options.ExportedOnly == true, and the input value was unexported this field will be nil.
 	AST ast.Expr
 
 	// ContainsUnexported indicates if the AST references unexported types/values, excluding those
@@ -384,8 +396,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			ContainsUnexported: false,
 		}, nil
 	default:
-		// TODO: make this an error
-		return Result{AST: nil}, nil
+		return Result{AST: nil}, &ErrInvalidType{Value: v.Interface()}
 	}
 }
 

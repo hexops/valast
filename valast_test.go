@@ -273,7 +273,6 @@ func TestExportedOnly_input(t *testing.T) {
 					bar: "hello",
 				},
 			},
-			err: "valast: cannot convert value of kind:struct type:valast.baz",
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
@@ -418,7 +417,6 @@ func TestExportedOnly_input(t *testing.T) {
 			name:  "struct",
 			input: unexportedStruct{A: "b"},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert value of kind:struct type:valast.unexportedStruct",
 		},
 		{
 			// TODO: BUG: expect nil output

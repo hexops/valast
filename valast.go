@@ -345,17 +345,11 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 		// TODO: format long strings, strings with unicode, etc. more nicely
 		return basicLit(token.STRING, "string", strconv.Quote(v.String()), opt)
 	case reflect.Struct:
-		if opt.ExportedOnly && !ast.IsExported(vv.Type().Name()) {
-			return Result{AST: nil}, nil
-		}
 		var (
 			structValue        []ast.Expr
 			containsUnexported bool
 		)
 		for i := 0; i < v.NumField(); i++ {
-			if opt.ExportedOnly && !ast.IsExported(v.Type().Field(i).Name) {
-				continue
-			}
 			if unexported(v.Field(i)).IsZero() {
 				continue
 			}
@@ -365,6 +359,9 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			}
 			if value.ContainsUnexported {
 				containsUnexported = true
+				if opt.ExportedOnly {
+					continue
+				}
 			}
 			if value.AST == nil {
 				continue // TODO: raise error? e.g. pointer to interface
@@ -375,6 +372,9 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			})
 		}
 		structType := typeExpr(vv.Type(), opt)
+		if structType.AST == nil {
+			return Result{ContainsUnexported: true}, nil
+		}
 		return Result{
 			AST: &ast.CompositeLit{
 				Type: structType.AST,
@@ -540,6 +540,9 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 			fieldType := typeExpr(field.Type, opt)
 			if fieldType.ContainsUnexported {
 				containsUnexported = true
+				if opt.ExportedOnly {
+					return Result{ContainsUnexported: true}
+				}
 			}
 			fields = append(fields, &ast.Field{
 				Names: []*ast.Ident{ast.NewIdent(field.Name)},

@@ -342,8 +342,8 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 		return basicLit(token.STRING, "string", strconv.Quote(v.String()), opt)
 	case reflect.Struct:
 		var (
-			structValue        []ast.Expr
-			requiresUnexported bool
+			structValue                           []ast.Expr
+			requiresUnexported, omittedUnexported bool
 		)
 		for i := 0; i < v.NumField(); i++ {
 			if unexported(v.Field(i)).IsZero() {
@@ -356,8 +356,12 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			if value.RequiresUnexported {
 				requiresUnexported = true
 				if opt.ExportedOnly {
+					omittedUnexported = true
 					continue
 				}
+			}
+			if value.OmittedUnexported {
+				omittedUnexported = true
 			}
 			if value.AST == nil {
 				continue // TODO: raise error? e.g. pointer to interface
@@ -377,6 +381,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Elts: structValue,
 			},
 			RequiresUnexported: structType.RequiresUnexported || requiresUnexported,
+			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.UnsafePointer:
 		return Result{

@@ -524,8 +524,8 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 			}
 		}
 		var (
-			fields             []*ast.Field
-			requiresUnexported bool
+			fields                                []*ast.Field
+			requiresUnexported, omittedUnexported bool
 		)
 		for i := 0; i < v.NumField(); i++ {
 			field := v.Field(i)
@@ -535,6 +535,9 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 				if opt.ExportedOnly {
 					return Result{RequiresUnexported: true}
 				}
+			}
+			if fieldType.OmittedUnexported {
+				omittedUnexported = true
 			}
 			fields = append(fields, &ast.Field{
 				Names: []*ast.Ident{ast.NewIdent(field.Name)},
@@ -546,6 +549,7 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 				Fields: &ast.FieldList{List: fields},
 			},
 			RequiresUnexported: requiresUnexported,
+			OmittedUnexported:  omittedUnexported,
 		}
 	default:
 		return Result{AST: ast.NewIdent(v.Name())}

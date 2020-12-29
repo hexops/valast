@@ -280,94 +280,94 @@ func TestExportedOnly_input(t *testing.T) {
 			err:   "valast: cannot convert unexported value valast.unexportedBool",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "int",
 			input: unexportedInt(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedInt",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "int8",
 			input: unexportedInt8(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedInt8",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "int16",
 			input: unexportedInt16(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedInt16",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "int32",
 			input: unexportedInt32(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedInt32",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "int64",
 			input: unexportedInt64(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedInt64",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "uint",
 			input: unexportedUint(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedUint",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "uint8",
 			input: unexportedUint8(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedUint8",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "uint16",
 			input: unexportedUint16(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedUint16",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "uint32",
 			input: unexportedUint32(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedUint32",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "uint64",
 			input: unexportedUint64(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedUint64",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "uintptr",
 			input: unexportedUintptr(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedUintptr",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "float32",
 			input: unexportedFloat32(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedFloat32",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "float64",
 			input: unexportedFloat64(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedFloat64",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "complex64",
 			input: unexportedComplex64(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedComplex64",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "complex128",
 			input: unexportedComplex128(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedComplex128",
 		},
 		{
 			// TODO: BUG: expect nil output
@@ -430,10 +430,10 @@ func TestExportedOnly_input(t *testing.T) {
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "string",
 			input: unexportedString("hello"),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedString",
 		},
 		{
 			name:  "struct",
@@ -547,97 +547,81 @@ func TestUnexportedInputs(t *testing.T) {
 		err   string
 	}{
 		{
-			// TODO: BUG: not properly typed bool(true) vs. unexportedBool(true)
 			name:  "bool",
 			input: unexportedBool(true),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed int(1) vs. unexportedInt(1)
 			name:  "int",
 			input: unexportedInt(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed int8(1) vs. unexportedInt8(1)
 			name:  "int8",
 			input: unexportedInt8(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed int16(1) vs. unexportedInt16(1)
 			name:  "int16",
 			input: unexportedInt16(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed int32(1) vs. unexportedInt32(1)
 			name:  "int32",
 			input: unexportedInt32(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed int64(1) vs. unexportedInt64(1)
 			name:  "int64",
 			input: unexportedInt64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed uint(1) vs. unexportedUint(1)
 			name:  "uint",
 			input: unexportedUint(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed uint8(1) vs. unexportedUint8(1)
 			name:  "uint8",
 			input: unexportedUint8(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed uint16(1) vs. unexportedUint16(1)
 			name:  "uint16",
 			input: unexportedUint16(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed uint32(1) vs. unexportedUint32(1)
 			name:  "uint32",
 			input: unexportedUint32(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed uint64(1) vs. unexportedUint64(1)
 			name:  "uint64",
 			input: unexportedUint64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed uintptr(1) vs. unexportedUintptr(1)
 			name:  "uintptr",
 			input: unexportedUintptr(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed float32(1) vs. unexportedFloat32(1)
 			name:  "float32",
 			input: unexportedFloat32(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed float64(1) vs. unexportedFloat64(1)
 			name:  "float64",
 			input: unexportedFloat64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed complex64(1) vs. unexportedComplex64(1)
 			name:  "complex64",
 			input: unexportedComplex64(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: not properly typed complex128(1) vs. unexportedComplex128(1)
 			name:  "complex128",
 			input: unexportedComplex128(1),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
@@ -679,7 +663,6 @@ func TestUnexportedInputs(t *testing.T) {
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: string("hello") should be unexportedString("hello")
 			name:  "string",
 			input: unexportedString("hello"),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},

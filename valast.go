@@ -108,17 +108,20 @@ func String(v reflect.Value, opt *Options) (string, error) {
 	return buf.String(), nil
 }
 
-func basicLit(kind token.Token, typ string, v interface{}, opt *Options) (Result, error) {
-	if opt.Unqualify {
-		return Result{
-			AST: &ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)},
-		}, nil
+func basicLit(vv reflect.Value, kind token.Token, builtinType string, v interface{}, opt *Options) (Result, error) {
+	typeExpr := typeExpr(vv.Type(), opt)
+	if opt.Unqualify && vv.Type().Name() == builtinType && vv.Type().PkgPath() == "" {
+		return Result{AST: ast.NewIdent(fmt.Sprint(v))}, nil
+	}
+	if opt.ExportedOnly && typeExpr.RequiresUnexported {
+		return Result{RequiresUnexported: true}, nil
 	}
 	return Result{
 		AST: &ast.CallExpr{
-			Fun:  ast.NewIdent(typ),
-			Args: []ast.Expr{&ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)}},
+			Fun:  typeExpr.AST,
+			Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
 		},
+		RequiresUnexported: typeExpr.RequiresUnexported,
 	}, nil
 }
 
@@ -193,35 +196,35 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			RequiresUnexported: boolType.RequiresUnexported,
 		}, nil
 	case reflect.Int:
-		return basicLit(token.INT, "int", v, opt)
+		return basicLit(vv, token.INT, "int", v, opt)
 	case reflect.Int8:
-		return basicLit(token.INT, "int8", v, opt)
+		return basicLit(vv, token.INT, "int8", v, opt)
 	case reflect.Int16:
-		return basicLit(token.INT, "int16", v, opt)
+		return basicLit(vv, token.INT, "int16", v, opt)
 	case reflect.Int32:
-		return basicLit(token.INT, "int32", v, opt)
+		return basicLit(vv, token.INT, "int32", v, opt)
 	case reflect.Int64:
-		return basicLit(token.INT, "int64", v, opt)
+		return basicLit(vv, token.INT, "int64", v, opt)
 	case reflect.Uint:
-		return basicLit(token.INT, "uint", v, opt)
+		return basicLit(vv, token.INT, "uint", v, opt)
 	case reflect.Uint8:
-		return basicLit(token.INT, "uint8", v, opt)
+		return basicLit(vv, token.INT, "uint8", v, opt)
 	case reflect.Uint16:
-		return basicLit(token.INT, "uint16", v, opt)
+		return basicLit(vv, token.INT, "uint16", v, opt)
 	case reflect.Uint32:
-		return basicLit(token.INT, "uint32", v, opt)
+		return basicLit(vv, token.INT, "uint32", v, opt)
 	case reflect.Uint64:
-		return basicLit(token.INT, "uint64", v, opt)
+		return basicLit(vv, token.INT, "uint64", v, opt)
 	case reflect.Uintptr:
-		return basicLit(token.INT, "uintptr", v, opt)
+		return basicLit(vv, token.INT, "uintptr", v, opt)
 	case reflect.Float32:
-		return basicLit(token.FLOAT, "float32", v, opt)
+		return basicLit(vv, token.FLOAT, "float32", v, opt)
 	case reflect.Float64:
-		return basicLit(token.FLOAT, "float64", v, opt)
+		return basicLit(vv, token.FLOAT, "float64", v, opt)
 	case reflect.Complex64:
-		return basicLit(token.FLOAT, "complex64", v, opt)
+		return basicLit(vv, token.FLOAT, "complex64", v, opt)
 	case reflect.Complex128:
-		return basicLit(token.FLOAT, "complex128", v, opt)
+		return basicLit(vv, token.FLOAT, "complex128", v, opt)
 	case reflect.Array:
 		var (
 			elts               []ast.Expr
@@ -360,7 +363,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 		}, nil
 	case reflect.String:
 		// TODO: format long strings, strings with unicode, etc. more nicely
-		return basicLit(token.STRING, "string", strconv.Quote(v.String()), opt)
+		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt)
 	case reflect.Struct:
 		var (
 			structValue                           []ast.Expr

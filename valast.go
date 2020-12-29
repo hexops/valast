@@ -429,13 +429,27 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 	switch v.Kind() {
 	case reflect.Array:
 		// TODO: omit if not exported and Options.ExportedOnly
-		elem := typeExpr(v.Elem(), opt)
+		if v.Name() != "" {
+			pkgPath := v.PkgPath()
+			if pkgPath != "" && pkgPath != opt.PackagePath {
+				// TODO: bubble up errors
+				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				if pkgName != opt.PackageName {
+					return Result{
+						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
+						RequiresUnexported: !ast.IsExported(v.Name()),
+					}
+				}
+			}
+			return Result{AST: ast.NewIdent(v.Name())}
+		}
+		elemType := typeExpr(v.Elem(), opt)
 		return Result{
 			AST: &ast.ArrayType{
 				Len: &ast.BasicLit{Kind: token.INT, Value: fmt.Sprint(v.Len())},
-				Elt: elem.AST,
+				Elt: elemType.AST,
 			},
-			RequiresUnexported: elem.RequiresUnexported,
+			RequiresUnexported: elemType.RequiresUnexported,
 		}
 	case reflect.Interface:
 		// TODO: omit if not exported and Options.ExportedOnly

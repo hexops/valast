@@ -370,10 +370,10 @@ func TestExportedOnly_input(t *testing.T) {
 			err:   "valast: cannot convert unexported value valast.unexportedComplex128",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "array",
 			input: unexportedArray{1.0},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedArray",
 		},
 		{
 			name: "interface",
@@ -627,7 +627,7 @@ func TestUnexportedInputs(t *testing.T) {
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: [1]float32{float32(1)} should be [1]float32{1}
+			// TODO: BUG: unexportedArray{float32(1)} should be unexportedArray{1}
 			name:  "array",
 			input: unexportedArray{1.0},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},

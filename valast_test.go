@@ -657,7 +657,7 @@ func TestUnexportedInputs(t *testing.T) {
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: []int{int(1), int(2), int(3)} should be []unexportedSlice{1, 2, 3}
+			// TODO: BUG: []int{1, 2, 3} should be []unexportedSlice{1, 2, 3}
 			name:  "slice",
 			input: unexportedSlice{1, 2, 3},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},

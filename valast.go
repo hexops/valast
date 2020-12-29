@@ -312,7 +312,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Value: v.AST,
 			})
 		}
-		mapType := typeExpr(vv.Type(), opt.withUnqualify())
+		mapType := typeExpr(vv.Type(), opt)
 		return Result{
 			AST: &ast.CompositeLit{
 				Type: mapType.AST,
@@ -344,7 +344,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			requiresUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
-			elem, err := AST(vv.Index(i), opt)
+			elem, err := AST(vv.Index(i), opt.withUnqualify())
 			if err != nil {
 				return Result{}, err
 			}

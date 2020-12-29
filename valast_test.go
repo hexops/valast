@@ -198,7 +198,6 @@ func TestEdgeCases(t *testing.T) {
 		err   string
 	}{
 		{
-			// TODO: make this produce an error
 			name: "interface_pointer",
 			input: &struct {
 				v *test.Bazer

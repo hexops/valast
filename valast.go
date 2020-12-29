@@ -528,10 +528,24 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 		}
 	case reflect.Slice:
 		// TODO: omit if not exported and Options.ExportedOnly
-		sliceType := typeExpr(v.Elem(), opt)
+		if v.Name() != "" {
+			pkgPath := v.PkgPath()
+			if pkgPath != "" && pkgPath != opt.PackagePath {
+				// TODO: bubble up errors
+				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				if pkgName != opt.PackageName {
+					return Result{
+						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
+						RequiresUnexported: !ast.IsExported(v.Name()),
+					}
+				}
+			}
+			return Result{AST: ast.NewIdent(v.Name())}
+		}
+		elemType := typeExpr(v.Elem(), opt)
 		return Result{
-			AST:                &ast.ArrayType{Elt: sliceType.AST},
-			RequiresUnexported: sliceType.RequiresUnexported,
+			AST:                &ast.ArrayType{Elt: elemType.AST},
+			RequiresUnexported: elemType.RequiresUnexported,
 		}
 	case reflect.Struct:
 		// TODO: omit if not exported and Options.ExportedOnly

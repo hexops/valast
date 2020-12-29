@@ -1,6 +1,7 @@
 package valast
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"unsafe"
@@ -175,7 +176,7 @@ three`),
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != err.Error() || tst.err == "" && err != nil {
+			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
 				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
 				return
 			}
@@ -221,7 +222,7 @@ func TestEdgeCases(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != err.Error() || tst.err == "" && err != nil {
+			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
 				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
 				return
 			}
@@ -429,7 +430,7 @@ func TestExportedOnly_input(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != err.Error() || tst.err == "" && err != nil {
+			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
 				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
 				return
 			}
@@ -481,7 +482,7 @@ func TestExportedOnly_nested(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != err.Error() || tst.err == "" && err != nil {
+			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
 				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
 				return
 			}
@@ -681,7 +682,7 @@ func TestUnexportedInputs(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != err.Error() || tst.err == "" && err != nil {
+			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
 				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
 				return
 			}

@@ -378,7 +378,6 @@ func TestExportedOnly_input(t *testing.T) {
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
 		},
 		{
-			// TODO: BUG: expect nil output
 			name: "interface",
 			input: struct {
 				V unexportedInterface

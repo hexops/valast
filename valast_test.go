@@ -406,22 +406,18 @@ func TestExportedOnly_input(t *testing.T) {
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
 		},
 		{
-			// TODO: BUG: expect nil output
-			name: "map_unexported_key",
+			name: "map_unexported_key_omitted",
 			input: map[string]interface{}{
 				"a": unexportedInt(1),
 			},
 			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err: "valast: cannot convert unexported value map[string]interface {}",
 		},
 		{
-			// TODO: BUG: expect nil output
-			name: "map_unexported_value",
+			name: "map_unexported_value_omitted",
 			input: map[interface{}]string{
 				unexportedInt(1): "a",
 			},
 			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err: "valast: cannot convert unexported value map[interface {}]string",
 		},
 		{
 			// TODO: BUG: expect nil output

@@ -267,9 +267,9 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 	case reflect.Map:
 		// TODO: stable sorting of map keys
 		var (
-			keyValueExprs      []ast.Expr
-			requiresUnexported bool
-			keys               = vv.MapKeys()
+			keyValueExprs                         []ast.Expr
+			requiresUnexported, omittedUnexported bool
+			keys                                  = vv.MapKeys()
 		)
 		for _, key := range keys {
 			value := vv.MapIndex(key)
@@ -278,14 +278,28 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				return Result{}, err
 			}
 			if k.RequiresUnexported {
+				if opt.ExportedOnly {
+					omittedUnexported = true
+					continue
+				}
 				requiresUnexported = true
+			}
+			if k.OmittedUnexported {
+				omittedUnexported = true
 			}
 			v, err := AST(value, opt.withUnqualify())
 			if err != nil {
 				return Result{}, err
 			}
 			if v.RequiresUnexported {
+				if opt.ExportedOnly {
+					omittedUnexported = true
+					continue
+				}
 				requiresUnexported = true
+			}
+			if v.OmittedUnexported {
+				omittedUnexported = true
 			}
 			keyValueExprs = append(keyValueExprs, &ast.KeyValueExpr{
 				Key:   k.AST,
@@ -299,6 +313,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Elts: keyValueExprs,
 			},
 			RequiresUnexported: requiresUnexported || mapType.RequiresUnexported,
+			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.Ptr:
 		opt.Unqualify = false

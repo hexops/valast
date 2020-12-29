@@ -92,6 +92,9 @@ func String(v reflect.Value, opt *Options) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if opt.ExportedOnly && result.RequiresUnexported {
+		return "", fmt.Errorf("valast: cannot convert unexported value %T", v.Interface())
+	}
 	if result.AST == nil {
 		var typ = "nil"
 		if v != (reflect.Value{}) {
@@ -354,11 +357,11 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				return Result{}, err
 			}
 			if value.RequiresUnexported {
-				requiresUnexported = true
 				if opt.ExportedOnly {
 					omittedUnexported = true
 					continue
 				}
+				requiresUnexported = true
 			}
 			if value.OmittedUnexported {
 				omittedUnexported = true

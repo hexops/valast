@@ -384,7 +384,7 @@ func TestExportedOnly_input(t *testing.T) {
 				V unexportedInterface
 			}{V: nil},
 			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err: "valast: cannot convert value of kind:struct type:struct { V valast.unexportedInterface }",
+			err: "valast: cannot convert unexported value struct { V valast.unexportedInterface }",
 		},
 		{
 			// TODO: BUG: expect nil output
@@ -413,10 +413,10 @@ func TestExportedOnly_input(t *testing.T) {
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "struct",
 			input: unexportedStruct{A: "b"},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedStruct",
 		},
 		{
 			// TODO: BUG: expect nil output

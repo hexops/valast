@@ -108,8 +108,7 @@ func String(v reflect.Value, opt *Options) (string, error) {
 func basicLit(kind token.Token, typ string, v interface{}, opt *Options) (Result, error) {
 	if opt.Unqualify {
 		return Result{
-			AST:                &ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)},
-			ContainsUnexported: false,
+			AST: &ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)},
 		}, nil
 	}
 	return Result{
@@ -117,7 +116,6 @@ func basicLit(kind token.Token, typ string, v interface{}, opt *Options) (Result
 			Fun:  ast.NewIdent(typ),
 			Args: []ast.Expr{&ast.BasicLit{Kind: kind, Value: fmt.Sprint(v)}},
 		},
-		ContainsUnexported: false,
 	}, nil
 }
 
@@ -151,12 +149,13 @@ type Result struct {
 	// If Options.ExportedOnly == true, and the input value was unexported this field will be nil.
 	AST ast.Expr
 
-	// ContainsUnexported indicates if the AST references unexported types/values, excluding those
-	// defined in the package specified in the Options. i.e. whether or not the code will be valid
-	// according to exportation rules.
-	//
-	// If Options.ExportedOnly == true, this field signifies if unexported fields were omitted.
-	ContainsUnexported bool
+	// OmittedUnexported indicates if unexported fields were omitted or not. Only indicative if
+	// Options.ExportedOnly == true.
+	OmittedUnexported bool
+
+	// RequiresUnexported indicates if the AST requires access to unexported types/values outside
+	// of the package specified in the Options, and is thus invalid code.
+	RequiresUnexported bool
 }
 
 // AST is identical to String, except it returns an AST and other metadata about the AST.
@@ -169,8 +168,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 		// 	valast.AST(reflect.ValueOf(x))
 		//
 		return Result{
-			AST:                ast.NewIdent("nil"),
-			ContainsUnexported: false,
+			AST: ast.NewIdent("nil"),
 		}, nil
 	}
 
@@ -179,8 +177,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 	case reflect.Bool:
 		if opt.Unqualify {
 			return Result{
-				AST:                ast.NewIdent(fmt.Sprint(v)),
-				ContainsUnexported: false,
+				AST: ast.NewIdent(fmt.Sprint(v)),
 			}, nil
 		}
 		return Result{
@@ -188,7 +185,6 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Fun:  ast.NewIdent("bool"),
 				Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
 			},
-			ContainsUnexported: false,
 		}, nil
 	case reflect.Int:
 		return basicLit(token.INT, "int", v, opt)
@@ -223,15 +219,15 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 	case reflect.Array:
 		var (
 			elts               []ast.Expr
-			containsUnexported bool
+			requiresUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
 			elem, err := AST(vv.Index(i), opt)
 			if err != nil {
 				return Result{}, err
 			}
-			if elem.ContainsUnexported {
-				containsUnexported = true
+			if elem.RequiresUnexported {
+				requiresUnexported = true
 			}
 			elts = append(elts, elem.AST)
 		}
@@ -241,13 +237,13 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Type: arrayType.AST,
 				Elts: elts,
 			},
-			ContainsUnexported: arrayType.ContainsUnexported || containsUnexported,
+			RequiresUnexported: arrayType.RequiresUnexported || requiresUnexported,
 		}, nil
 	case reflect.Interface:
 		if opt.ExportedOnly && !ast.IsExported(vv.Type().Name()) {
 			return Result{
 				AST:                nil,
-				ContainsUnexported: true,
+				RequiresUnexported: true,
 			}, nil
 		}
 		if opt.Unqualify {
@@ -263,13 +259,13 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Type: interfaceType.AST,
 				Elts: []ast.Expr{v.AST},
 			},
-			ContainsUnexported: interfaceType.ContainsUnexported || v.ContainsUnexported,
+			RequiresUnexported: interfaceType.RequiresUnexported || v.RequiresUnexported,
 		}, nil
 	case reflect.Map:
 		// TODO: stable sorting of map keys
 		var (
 			keyValueExprs      []ast.Expr
-			containsUnexported bool
+			requiresUnexported bool
 			keys               = vv.MapKeys()
 		)
 		for _, key := range keys {
@@ -278,15 +274,15 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			if err != nil {
 				return Result{}, err
 			}
-			if k.ContainsUnexported {
-				containsUnexported = true
+			if k.RequiresUnexported {
+				requiresUnexported = true
 			}
 			v, err := AST(value, opt.withUnqualify())
 			if err != nil {
 				return Result{}, err
 			}
-			if v.ContainsUnexported {
-				containsUnexported = true
+			if v.RequiresUnexported {
+				requiresUnexported = true
 			}
 			keyValueExprs = append(keyValueExprs, &ast.KeyValueExpr{
 				Key:   k.AST,
@@ -299,13 +295,13 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Type: mapType.AST,
 				Elts: keyValueExprs,
 			},
-			ContainsUnexported: containsUnexported || mapType.ContainsUnexported,
+			RequiresUnexported: requiresUnexported || mapType.RequiresUnexported,
 		}, nil
 	case reflect.Ptr:
 		opt.Unqualify = false
 		if vv.Elem().Kind() == reflect.Interface {
 			// Pointer to interface; cannot be created in a single expression.
-			return Result{AST: nil, ContainsUnexported: false}, &ErrPointerToInterface{Value: vv.Interface()}
+			return Result{}, &ErrPointerToInterface{Value: vv.Interface()}
 		}
 		elem, err := AST(vv.Elem(), opt)
 		if err != nil {
@@ -316,20 +312,20 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Op: token.AND,
 				X:  elem.AST,
 			},
-			ContainsUnexported: elem.ContainsUnexported,
+			RequiresUnexported: elem.RequiresUnexported,
 		}, nil
 	case reflect.Slice:
 		var (
 			elts               []ast.Expr
-			containsUnexported bool
+			requiresUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
 			elem, err := AST(vv.Index(i), opt)
 			if err != nil {
 				return Result{}, err
 			}
-			if elem.ContainsUnexported {
-				containsUnexported = true
+			if elem.RequiresUnexported {
+				requiresUnexported = true
 			}
 			elts = append(elts, elem.AST)
 		}
@@ -339,7 +335,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Type: sliceType.AST,
 				Elts: elts,
 			},
-			ContainsUnexported: containsUnexported || sliceType.ContainsUnexported,
+			RequiresUnexported: requiresUnexported || sliceType.RequiresUnexported,
 		}, nil
 	case reflect.String:
 		// TODO: format long strings, strings with unicode, etc. more nicely
@@ -347,7 +343,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 	case reflect.Struct:
 		var (
 			structValue        []ast.Expr
-			containsUnexported bool
+			requiresUnexported bool
 		)
 		for i := 0; i < v.NumField(); i++ {
 			if unexported(v.Field(i)).IsZero() {
@@ -357,8 +353,8 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			if err != nil {
 				return Result{}, err
 			}
-			if value.ContainsUnexported {
-				containsUnexported = true
+			if value.RequiresUnexported {
+				requiresUnexported = true
 				if opt.ExportedOnly {
 					continue
 				}
@@ -373,14 +369,14 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 		}
 		structType := typeExpr(vv.Type(), opt)
 		if structType.AST == nil {
-			return Result{ContainsUnexported: true}, nil
+			return Result{RequiresUnexported: true}, nil
 		}
 		return Result{
 			AST: &ast.CompositeLit{
 				Type: structType.AST,
 				Elts: structValue,
 			},
-			ContainsUnexported: structType.ContainsUnexported || containsUnexported,
+			RequiresUnexported: structType.RequiresUnexported || requiresUnexported,
 		}, nil
 	case reflect.UnsafePointer:
 		return Result{
@@ -393,7 +389,6 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 					},
 				},
 			},
-			ContainsUnexported: false,
 		}, nil
 	default:
 		return Result{AST: nil}, &ErrInvalidType{Value: v.Interface()}
@@ -411,7 +406,7 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 				Len: &ast.BasicLit{Kind: token.INT, Value: fmt.Sprint(v.Len())},
 				Elt: elem.AST,
 			},
-			ContainsUnexported: elem.ContainsUnexported,
+			RequiresUnexported: elem.RequiresUnexported,
 		}
 	case reflect.Interface:
 		// TODO: omit if not exported and Options.ExportedOnly
@@ -423,23 +418,20 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 				if pkgName != opt.PackageName {
 					return Result{
 						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
-						ContainsUnexported: !ast.IsExported(v.Name()),
+						RequiresUnexported: !ast.IsExported(v.Name()),
 					}
 				}
 			}
-			return Result{
-				AST:                ast.NewIdent(v.Name()),
-				ContainsUnexported: false,
-			}
+			return Result{AST: ast.NewIdent(v.Name())}
 		}
 		var methods []*ast.Field
-		var containsUnexported bool
+		var requiresUnexported bool
 		for i := 0; i < v.NumMethod(); i++ {
 			method := v.Method(i)
 			methodType := typeExpr(method.Type, opt)
 			// TODO: omit if not exported and Options.ExportedOnly
-			if methodType.ContainsUnexported {
-				containsUnexported = true
+			if methodType.RequiresUnexported {
+				requiresUnexported = true
 			}
 			methods = append(methods, &ast.Field{
 				Names: []*ast.Ident{ast.NewIdent(method.Name)},
@@ -448,21 +440,21 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 		}
 		return Result{
 			AST:                &ast.InterfaceType{Methods: &ast.FieldList{List: methods}},
-			ContainsUnexported: containsUnexported,
+			RequiresUnexported: requiresUnexported,
 		}
 	case reflect.Func:
 		// TODO: omit if not exported and Options.ExportedOnly
 		// Note: reflect cannot determine parameter/result names. See https://groups.google.com/g/golang-nuts/c/nM_ZhL7fuGc
 		var (
-			containsUnexported bool
+			requiresUnexported bool
 			params             []*ast.Field
 		)
 		for i := 0; i < v.NumIn(); i++ {
 			// TODO: omit if not exported and Options.ExportedOnly
 			param := v.In(i)
 			paramType := typeExpr(param, opt)
-			if paramType.ContainsUnexported {
-				containsUnexported = true
+			if paramType.RequiresUnexported {
+				requiresUnexported = true
 			}
 			params = append(params, &ast.Field{
 				Type: paramType.AST,
@@ -473,8 +465,8 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 			// TODO: omit if not exported and Options.ExportedOnly
 			result := v.Out(i)
 			resultType := typeExpr(result, opt)
-			if resultType.ContainsUnexported {
-				containsUnexported = true
+			if resultType.RequiresUnexported {
+				requiresUnexported = true
 			}
 			results = append(results, &ast.Field{
 				Type: resultType.AST,
@@ -485,7 +477,7 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 				Params:  &ast.FieldList{List: params},
 				Results: &ast.FieldList{List: results},
 			},
-			ContainsUnexported: containsUnexported,
+			RequiresUnexported: requiresUnexported,
 		}
 	case reflect.Map:
 		// TODO: omit if not exported and Options.ExportedOnly
@@ -496,21 +488,21 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 				Key:   keyType.AST,
 				Value: valueType.AST,
 			},
-			ContainsUnexported: keyType.ContainsUnexported || valueType.ContainsUnexported,
+			RequiresUnexported: keyType.RequiresUnexported || valueType.RequiresUnexported,
 		}
 	case reflect.Ptr:
 		// TODO: omit if not exported and Options.ExportedOnly
 		ptrType := typeExpr(v.Elem(), opt)
 		return Result{
 			AST:                &ast.StarExpr{X: ptrType.AST},
-			ContainsUnexported: ptrType.ContainsUnexported,
+			RequiresUnexported: ptrType.RequiresUnexported,
 		}
 	case reflect.Slice:
 		// TODO: omit if not exported and Options.ExportedOnly
 		sliceType := typeExpr(v.Elem(), opt)
 		return Result{
 			AST:                &ast.ArrayType{Elt: sliceType.AST},
-			ContainsUnexported: sliceType.ContainsUnexported,
+			RequiresUnexported: sliceType.RequiresUnexported,
 		}
 	case reflect.Struct:
 		// TODO: omit if not exported and Options.ExportedOnly
@@ -522,26 +514,26 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 				if pkgName != opt.PackageName {
 					return Result{
 						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
-						ContainsUnexported: !ast.IsExported(v.Name()),
+						RequiresUnexported: !ast.IsExported(v.Name()),
 					}
 				}
 			}
 			return Result{
 				AST:                ast.NewIdent(v.Name()),
-				ContainsUnexported: false,
+				RequiresUnexported: false,
 			}
 		}
 		var (
 			fields             []*ast.Field
-			containsUnexported bool
+			requiresUnexported bool
 		)
 		for i := 0; i < v.NumField(); i++ {
 			field := v.Field(i)
 			fieldType := typeExpr(field.Type, opt)
-			if fieldType.ContainsUnexported {
-				containsUnexported = true
+			if fieldType.RequiresUnexported {
+				requiresUnexported = true
 				if opt.ExportedOnly {
-					return Result{ContainsUnexported: true}
+					return Result{RequiresUnexported: true}
 				}
 			}
 			fields = append(fields, &ast.Field{
@@ -553,13 +545,10 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 			AST: &ast.StructType{
 				Fields: &ast.FieldList{List: fields},
 			},
-			ContainsUnexported: containsUnexported,
+			RequiresUnexported: requiresUnexported,
 		}
 	default:
-		return Result{
-			AST:                ast.NewIdent(v.Name()),
-			ContainsUnexported: false,
-		}
+		return Result{AST: ast.NewIdent(v.Name())}
 	}
 }
 

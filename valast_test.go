@@ -154,7 +154,6 @@ three`),
 			}{v: nil},
 		},
 		{
-			// TODO: `&test.Baz{Bam: (1.34+0i), zeta: &test.foo{bar: "hello"}}` is not valid code because `zeta` is unexported.
 			name: "interface",
 			input: &struct {
 				v test.Bazer

@@ -178,16 +178,19 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 	vv := unexported(v)
 	switch vv.Kind() {
 	case reflect.Bool:
-		if opt.Unqualify {
-			return Result{
-				AST: ast.NewIdent(fmt.Sprint(v)),
-			}, nil
+		boolType := typeExpr(vv.Type(), opt)
+		if opt.Unqualify && vv.Type().Name() == "bool" && vv.Type().PkgPath() == "" {
+			return Result{AST: ast.NewIdent(fmt.Sprint(v))}, nil
+		}
+		if opt.ExportedOnly && boolType.RequiresUnexported {
+			return Result{RequiresUnexported: true}, nil
 		}
 		return Result{
 			AST: &ast.CallExpr{
-				Fun:  ast.NewIdent("bool"),
+				Fun:  boolType.AST,
 				Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
 			},
+			RequiresUnexported: boolType.RequiresUnexported,
 		}, nil
 	case reflect.Int:
 		return basicLit(token.INT, "int", v, opt)
@@ -575,6 +578,22 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 			OmittedUnexported:  omittedUnexported,
 		}
 	default:
+		if v.PkgPath() != "" {
+			pkgPath := v.PkgPath()
+			if pkgPath != opt.PackagePath {
+				// TODO: bubble up errors
+				pkgName, _ := opt.packagePathToName(pkgPath)
+				if pkgName != opt.PackageName {
+					return Result{
+						AST: &ast.CallExpr{
+							Fun:  &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
+							Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
+						},
+						RequiresUnexported: !ast.IsExported(v.Name()),
+					}
+				}
+			}
+		}
 		return Result{AST: ast.NewIdent(v.Name())}
 	}
 }

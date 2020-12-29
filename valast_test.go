@@ -274,10 +274,10 @@ func TestExportedOnly_input(t *testing.T) {
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "bool",
 			input: unexportedBool(true),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedBool",
 		},
 		{
 			// TODO: BUG: expect nil output
@@ -392,16 +392,16 @@ func TestExportedOnly_input(t *testing.T) {
 			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "map_unexported_key_type",
 			input: map[unexportedInt]string{},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value map[valast.unexportedInt]string",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "map_unexported_value_type",
 			input: map[string]unexportedInt{},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value map[string]valast.unexportedInt",
 		},
 		{
 			name: "map_unexported_key_omitted",

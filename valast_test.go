@@ -627,7 +627,6 @@ func TestUnexportedInputs(t *testing.T) {
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: unexportedArray{float32(1)} should be unexportedArray{1}
 			name:  "array",
 			input: unexportedArray{1.0},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},

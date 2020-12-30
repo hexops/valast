@@ -470,7 +470,6 @@ func TestExportedOnly_nested(t *testing.T) {
 		err   string
 	}{
 		{
-			// TODO: bug: expect nil output
 			name:  "external_struct_unexported_field_omitted",
 			input: test.NewBaz(),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},

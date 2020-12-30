@@ -1,1 +1,1 @@
-unsafe.Pointer(uintptr(0xdeadbeef))
+unexportedUnsafePointer(uintptr(0xdeadbeef))

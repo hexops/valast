@@ -384,7 +384,6 @@ func TestExportedOnly_input(t *testing.T) {
 			err: "valast: cannot convert unexported value struct { V valast.unexportedInterface }",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name: "map",
 			input: unexportedMap{
 				"a": "b",
@@ -443,10 +442,10 @@ func TestExportedOnly_input(t *testing.T) {
 			err:   "valast: cannot convert unexported value valast.unexportedStruct",
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "unsafe_pointer",
-			input: unexportedUnsafePointer(unsafe.Pointer(uintptr(0xdeadbeef))),
+			input: unexportedUnsafePointer(uintptr(0xdeadbeef)),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedUnsafePointer",
 		},
 	}
 	for _, tst := range tests {
@@ -675,9 +674,8 @@ func TestUnexportedInputs(t *testing.T) {
 			},
 		*/
 		{
-			// TODO: BUG: unsafe.Pointer(uintptr(0xdeadbeef)) should be unexportedUnsafePointer(unsafe.Pointer(uintptr(0xdeadbeef)))
 			name:  "unsafe_pointer",
-			input: unexportedUnsafePointer(unsafe.Pointer(uintptr(0xdeadbeef))),
+			input: unexportedUnsafePointer(uintptr(0xdeadbeef)),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 	}

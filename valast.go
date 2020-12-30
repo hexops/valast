@@ -408,9 +408,10 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.UnsafePointer:
+		unsafePointerType := typeExpr(vv.Type(), opt)
 		return Result{
 			AST: &ast.CallExpr{
-				Fun: &ast.SelectorExpr{X: ast.NewIdent("unsafe"), Sel: ast.NewIdent("Pointer")},
+				Fun: unsafePointerType.AST,
 				Args: []ast.Expr{
 					&ast.CallExpr{
 						Fun:  ast.NewIdent("uintptr"),
@@ -418,6 +419,8 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 					},
 				},
 			},
+			RequiresUnexported: unsafePointerType.RequiresUnexported,
+			OmittedUnexported:  unsafePointerType.OmittedUnexported,
 		}, nil
 	default:
 		return Result{AST: nil}, &ErrInvalidType{Value: v.Interface()}
@@ -625,6 +628,29 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 			RequiresUnexported: requiresUnexported,
 			OmittedUnexported:  omittedUnexported,
 		}
+	case reflect.UnsafePointer:
+		// TODO: omit if not exported and Options.ExportedOnly
+		// Note: For a plain unsafe.Pointer type, v.PkgPath() does not report "unsafe" but rather
+		// an empty string "".
+		isPlainUnsafePointer := v.String() == "unsafe.Pointer"
+		if !isPlainUnsafePointer && v.Name() != "" {
+			pkgPath := v.PkgPath()
+			if pkgPath != "" && pkgPath != opt.PackagePath {
+				// TODO: bubble up errors
+				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				if pkgName != opt.PackageName {
+					return Result{
+						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
+						RequiresUnexported: !ast.IsExported(v.Name()),
+					}
+				}
+			}
+			return Result{
+				AST:                ast.NewIdent(v.Name()),
+				RequiresUnexported: false,
+			}
+		}
+		return Result{AST: &ast.SelectorExpr{X: ast.NewIdent("unsafe"), Sel: ast.NewIdent("Pointer")}}
 	default:
 		if v.PkgPath() != "" {
 			pkgPath := v.PkgPath()

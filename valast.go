@@ -421,9 +421,9 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 	case reflect.String:
 		s := v.String()
 		if len(s) > 40 && strings.Contains(s, "\n") && !strings.Contains(s, "`") {
-			return basicLit(vv, token.STRING, "string", "`"+s+"`", opt)
+			return basicLit(vv, token.STRING, "string", "`"+s+"`", opt.withUnqualify())
 		}
-		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt)
+		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt.withUnqualify())
 	case reflect.Struct:
 		var (
 			structValue                           []ast.Expr

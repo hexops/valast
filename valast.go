@@ -68,22 +68,36 @@ func DefaultPackagePathToName(path string) (string, error) {
 // String converts the value v into the equivalent Go literal syntax.
 //
 // It is an opinionated helper for the more extensive AST function.
-func String(v reflect.Value, opt *Options) (string, error) {
+//
+// If any error occurs, it will be returned as the string value. If handling errors is desired then
+// consider using the AST function directly.
+func String(v interface{}) string {
+	return StringWithOptions(v, nil)
+}
+
+// StringWithOptions converts the value v into the equivalent Go literal syntax, with the specified
+// options.
+//
+// It is an opinionated helper for the more extensive AST function.
+//
+// If any error occurs, it will be returned as the string value. If handling errors is desired then
+// consider using the AST function directly.
+func StringWithOptions(v interface{}, opt *Options) string {
 	if opt == nil {
 		opt = &Options{}
 	}
 	var buf bytes.Buffer
-	result, err := AST(v, opt)
+	result, err := AST(reflect.ValueOf(v), opt)
 	if err != nil {
-		return "", err
+		return err.Error()
 	}
 	if opt.ExportedOnly && result.RequiresUnexported {
-		return "", fmt.Errorf("valast: cannot convert unexported value %T", v.Interface())
+		return fmt.Sprintf("valast: cannot convert unexported value %T", v)
 	}
 	if err := format.Node(&buf, token.NewFileSet(), result.AST); err != nil {
-		return "", err
+		return fmt.Sprintf("valast: format: %v", err)
 	}
-	return buf.String(), nil
+	return buf.String()
 }
 
 func basicLit(vv reflect.Value, kind token.Token, builtinType string, v interface{}, opt *Options) (Result, error) {
@@ -164,6 +178,9 @@ type Result struct {
 // 	struct
 // 	unsafe pointer
 //
+// The input type is reflect.Value instead of interface{}, specifically to allow converting
+// interfaces derived from struct fields or other reflection which would otherwise be lost if the
+// input type is interface{}.
 func AST(v reflect.Value, opt *Options) (Result, error) {
 	if opt == nil {
 		opt = &Options{}

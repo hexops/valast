@@ -1,0 +1,1 @@
+valast: cannot convert unexported value struct { zeta valast.foo }

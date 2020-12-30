@@ -1,8 +1,6 @@
 package valast
 
 import (
-	"fmt"
-	"reflect"
 	"testing"
 	"unsafe"
 
@@ -174,11 +172,7 @@ three`),
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
-				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
-				return
-			}
+			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
 	}
@@ -195,14 +189,12 @@ func TestEdgeCases(t *testing.T) {
 		name  string
 		input interface{}
 		opt   *Options
-		err   string
 	}{
 		{
 			name: "interface_pointer",
 			input: &struct {
 				v *test.Bazer
 			}{v: &bazer},
-			err: "valast: pointers to interfaces are not allowed, found *test.Bazer",
 		},
 		{
 			// Ensures it does not produce &nil:
@@ -214,16 +206,11 @@ func TestEdgeCases(t *testing.T) {
 			input: &struct {
 				v *test.Bazer
 			}{v: &nilInterfacePointerBug},
-			err: "valast: pointers to interfaces are not allowed, found *test.Bazer",
 		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
-				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
-				return
-			}
+			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
 	}
@@ -261,7 +248,6 @@ func TestExportedOnly_input(t *testing.T) {
 		name  string
 		input interface{}
 		opt   *Options
-		err   string
 	}{
 		{
 			name: "struct_same_package",
@@ -277,103 +263,86 @@ func TestExportedOnly_input(t *testing.T) {
 			name:  "bool",
 			input: unexportedBool(true),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedBool",
 		},
 		{
 			name:  "int",
 			input: unexportedInt(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedInt",
 		},
 		{
 			name:  "int8",
 			input: unexportedInt8(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedInt8",
 		},
 		{
 			name:  "int16",
 			input: unexportedInt16(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedInt16",
 		},
 		{
 			name:  "int32",
 			input: unexportedInt32(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedInt32",
 		},
 		{
 			name:  "int64",
 			input: unexportedInt64(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedInt64",
 		},
 		{
 			name:  "uint",
 			input: unexportedUint(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedUint",
 		},
 		{
 			name:  "uint8",
 			input: unexportedUint8(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedUint8",
 		},
 		{
 			name:  "uint16",
 			input: unexportedUint16(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedUint16",
 		},
 		{
 			name:  "uint32",
 			input: unexportedUint32(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedUint32",
 		},
 		{
 			name:  "uint64",
 			input: unexportedUint64(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedUint64",
 		},
 		{
 			name:  "uintptr",
 			input: unexportedUintptr(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedUintptr",
 		},
 		{
 			name:  "float32",
 			input: unexportedFloat32(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedFloat32",
 		},
 		{
 			name:  "float64",
 			input: unexportedFloat64(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedFloat64",
 		},
 		{
 			name:  "complex64",
 			input: unexportedComplex64(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedComplex64",
 		},
 		{
 			name:  "complex128",
 			input: unexportedComplex128(1),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedComplex128",
 		},
 		{
 			name:  "array",
 			input: unexportedArray{1.0},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedArray",
 		},
 		{
 			name: "interface",
@@ -381,7 +350,6 @@ func TestExportedOnly_input(t *testing.T) {
 				V unexportedInterface
 			}{V: nil},
 			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err: "valast: cannot convert unexported value struct { V valast.unexportedInterface }",
 		},
 		{
 			name: "map",
@@ -389,19 +357,16 @@ func TestExportedOnly_input(t *testing.T) {
 				"a": "b",
 			},
 			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err: "valast: cannot convert unexported value valast.unexportedMap",
 		},
 		{
 			name:  "map_unexported_key_type",
 			input: map[unexportedInt]string{},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value map[valast.unexportedInt]string",
 		},
 		{
 			name:  "map_unexported_value_type",
 			input: map[string]unexportedInt{},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value map[string]valast.unexportedInt",
 		},
 		{
 			name: "map_unexported_key_omitted",
@@ -421,40 +386,31 @@ func TestExportedOnly_input(t *testing.T) {
 			name:  "pointer",
 			input: unexportedPointer(nil),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedPointer",
 		},
 		{
 			name:  "slice",
 			input: unexportedSlice{1, 2, 3},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedSlice",
 		},
 		{
 			name:  "string",
 			input: unexportedString("hello"),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedString",
 		},
 		{
 			name:  "struct",
 			input: unexportedStruct{A: "b"},
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedStruct",
 		},
 		{
 			name:  "unsafe_pointer",
 			input: unexportedUnsafePointer(uintptr(0xdeadbeef)),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err:   "valast: cannot convert unexported value valast.unexportedUnsafePointer",
 		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
-				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
-				return
-			}
+			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
 	}
@@ -467,7 +423,6 @@ func TestExportedOnly_nested(t *testing.T) {
 		name  string
 		input interface{}
 		opt   *Options
-		err   string
 	}{
 		{
 			name:  "external_struct_unexported_field_omitted",
@@ -490,16 +445,11 @@ func TestExportedOnly_nested(t *testing.T) {
 				zeta foo
 			}{zeta: foo{bar: "baz"}},
 			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			err: "valast: cannot convert unexported value struct { zeta valast.foo }",
 		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
-				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
-				return
-			}
+			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
 	}
@@ -537,7 +487,6 @@ func TestUnexportedInputs(t *testing.T) {
 		name  string
 		input interface{}
 		opt   *Options
-		err   string
 	}{
 		{
 			name:  "bool",
@@ -666,11 +615,7 @@ func TestUnexportedInputs(t *testing.T) {
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got, err := String(reflect.ValueOf(tst.input), tst.opt)
-			if tst.err != "" && tst.err != fmt.Sprint(err) || tst.err == "" && err != nil {
-				t.Fatal("\ngot:\n", err, "\nwant:\n", tst.err)
-				return
-			}
+			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
 	}

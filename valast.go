@@ -206,7 +206,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 		if err != nil {
 			return Result{}, err
 		}
-		if opt.Unqualify && vv.Type().Name() == "bool" && vv.Type().PkgPath() == "" {
+		if vv.Type().Name() == "bool" && vv.Type().PkgPath() == "" {
 			return Result{AST: ast.NewIdent(fmt.Sprint(v))}, nil
 		}
 		if opt.ExportedOnly && boolType.RequiresUnexported {

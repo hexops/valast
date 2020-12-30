@@ -65,24 +65,9 @@ func DefaultPackagePathToName(path string) (string, error) {
 	return pkgs[0].Name, nil
 }
 
-// String converts the value v into the equivalent Go literal syntax. The input must be one of
-// these kinds:
+// String converts the value v into the equivalent Go literal syntax.
 //
-// 	bool
-// 	int, int8, int16, int32, int64
-// 	uint, uint8, uint16, uint32, uint64
-// 	uintptr
-// 	float32, float64
-// 	complex64, complex128
-// 	array
-// 	interface
-// 	map
-// 	ptr
-// 	slice
-// 	string
-// 	struct
-// 	unsafe pointer
-//
+// It is an opinionated helper for the more extensive AST function.
 func String(v reflect.Value, opt *Options) (string, error) {
 	if opt == nil {
 		opt = &Options{}
@@ -160,7 +145,25 @@ type Result struct {
 	RequiresUnexported bool
 }
 
-// AST is identical to String, except it returns an AST and other metadata about the AST.
+// AST converts the given value into its equivalent Go AST expression.
+//
+// The input must be one of these kinds:
+//
+// 	bool
+// 	int, int8, int16, int32, int64
+// 	uint, uint8, uint16, uint32, uint64
+// 	uintptr
+// 	float32, float64
+// 	complex64, complex128
+// 	array
+// 	interface
+// 	map
+// 	ptr
+// 	slice
+// 	string
+// 	struct
+// 	unsafe pointer
+//
 func AST(v reflect.Value, opt *Options) (Result, error) {
 	if opt == nil {
 		opt = &Options{}

@@ -159,6 +159,9 @@ type Result struct {
 
 // AST is identical to String, except it returns an AST and other metadata about the AST.
 func AST(v reflect.Value, opt *Options) (Result, error) {
+	if opt == nil {
+		opt = &Options{}
+	}
 	if v == (reflect.Value{}) {
 		// Technically this is an invalid reflect.Value, but we handle it to be gracious in the
 		// case of:

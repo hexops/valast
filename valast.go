@@ -448,7 +448,6 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 	switch v.Kind() {
 	case reflect.Array:
-		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
@@ -477,7 +476,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: elemType.RequiresUnexported,
 		}, nil
 	case reflect.Interface:
-		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
@@ -502,7 +500,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			if err != nil {
 				return Result{}, err
 			}
-			// TODO: omit if not exported and Options.ExportedOnly
 			if methodType.RequiresUnexported {
 				requiresUnexported = true
 			}
@@ -516,14 +513,12 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: requiresUnexported,
 		}, nil
 	case reflect.Func:
-		// TODO: omit if not exported and Options.ExportedOnly
 		// Note: reflect cannot determine parameter/result names. See https://groups.google.com/g/golang-nuts/c/nM_ZhL7fuGc
 		var (
 			requiresUnexported bool
 			params             []*ast.Field
 		)
 		for i := 0; i < v.NumIn(); i++ {
-			// TODO: omit if not exported and Options.ExportedOnly
 			param := v.In(i)
 			paramType, err := typeExpr(param, opt)
 			if err != nil {
@@ -538,7 +533,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 		}
 		var results []*ast.Field
 		for i := 0; i < v.NumOut(); i++ {
-			// TODO: omit if not exported and Options.ExportedOnly
 			result := v.Out(i)
 			resultType, err := typeExpr(result, opt)
 			if err != nil {
@@ -559,7 +553,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: requiresUnexported,
 		}, nil
 	case reflect.Map:
-		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
@@ -595,7 +588,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: keyType.RequiresUnexported || valueType.RequiresUnexported,
 		}, nil
 	case reflect.Ptr:
-		// TODO: omit if not exported and Options.ExportedOnly
 		ptrType, err := typeExpr(v.Elem(), opt)
 		if err != nil {
 			return Result{}, err
@@ -605,7 +597,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: ptrType.RequiresUnexported,
 		}, nil
 	case reflect.Slice:
-		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
@@ -631,7 +622,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: elemType.RequiresUnexported,
 		}, nil
 	case reflect.Struct:
-		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
@@ -683,7 +673,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.UnsafePointer:
-		// TODO: omit if not exported and Options.ExportedOnly
 		// Note: For a plain unsafe.Pointer type, v.PkgPath() does not report "unsafe" but rather
 		// an empty string "".
 		isPlainUnsafePointer := v.String() == "unsafe.Pointer"

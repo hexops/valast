@@ -489,16 +489,14 @@ func TestExportedOnly_nested(t *testing.T) {
 				opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
 			},
 		*/
-		/*
-			{
-				// TODO: BUG: nil pointer panic
-				name: "interface",
-				input: struct {
-					zeta foo
-				}{zeta: foo{bar: "baz"}},
-				opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
-			},
-		*/
+		{
+			name: "interface",
+			input: struct {
+				zeta foo
+			}{zeta: foo{bar: "baz"}},
+			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err: "valast: cannot convert unexported value struct { zeta valast.foo }",
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

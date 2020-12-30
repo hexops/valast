@@ -102,7 +102,10 @@ func String(v reflect.Value, opt *Options) (string, error) {
 }
 
 func basicLit(vv reflect.Value, kind token.Token, builtinType string, v interface{}, opt *Options) (Result, error) {
-	typeExpr := typeExpr(vv.Type(), opt)
+	typeExpr, err := typeExpr(vv.Type(), opt)
+	if err != nil {
+		return Result{}, err
+	}
 	if opt.Unqualify && vv.Type().Name() == builtinType && vv.Type().PkgPath() == "" {
 		return Result{AST: ast.NewIdent(fmt.Sprint(v))}, nil
 	}
@@ -177,7 +180,10 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 	vv := unexported(v)
 	switch vv.Kind() {
 	case reflect.Bool:
-		boolType := typeExpr(vv.Type(), opt)
+		boolType, err := typeExpr(vv.Type(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		if opt.Unqualify && vv.Type().Name() == "bool" && vv.Type().PkgPath() == "" {
 			return Result{AST: ast.NewIdent(fmt.Sprint(v))}, nil
 		}
@@ -236,7 +242,10 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			}
 			elts = append(elts, elem.AST)
 		}
-		arrayType := typeExpr(vv.Type(), opt)
+		arrayType, err := typeExpr(vv.Type(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST: &ast.CompositeLit{
 				Type: arrayType.AST,
@@ -258,7 +267,10 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 		if err != nil {
 			return Result{}, err
 		}
-		interfaceType := typeExpr(vv.Type(), opt)
+		interfaceType, err := typeExpr(vv.Type(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST: &ast.CompositeLit{
 				Type: interfaceType.AST,
@@ -308,7 +320,10 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Value: v.AST,
 			})
 		}
-		mapType := typeExpr(vv.Type(), opt)
+		mapType, err := typeExpr(vv.Type(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST: &ast.CompositeLit{
 				Type: mapType.AST,
@@ -349,7 +364,10 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			}
 			elts = append(elts, elem.AST)
 		}
-		sliceType := typeExpr(vv.Type(), opt)
+		sliceType, err := typeExpr(vv.Type(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST: &ast.CompositeLit{
 				Type: sliceType.AST,
@@ -388,7 +406,10 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Value: value.AST,
 			})
 		}
-		structType := typeExpr(vv.Type(), opt)
+		structType, err := typeExpr(vv.Type(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		if opt.ExportedOnly && structType.RequiresUnexported {
 			return Result{RequiresUnexported: true}, nil
 		}
@@ -401,7 +422,10 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.UnsafePointer:
-		unsafePointerType := typeExpr(vv.Type(), opt)
+		unsafePointerType, err := typeExpr(vv.Type(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST: &ast.CallExpr{
 				Fun: unsafePointerType.AST,
@@ -421,53 +445,63 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 }
 
 // typeExpr returns an AST type expression for the value v.
-func typeExpr(v reflect.Type, opt *Options) Result {
+func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 	switch v.Kind() {
 	case reflect.Array:
 		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
-				// TODO: bubble up errors
-				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				pkgName, err := opt.packagePathToName(v.PkgPath())
+				if err != nil {
+					return Result{}, err
+				}
 				if pkgName != opt.PackageName {
 					return Result{
 						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
 						RequiresUnexported: !ast.IsExported(v.Name()),
-					}
+					}, nil
 				}
 			}
-			return Result{AST: ast.NewIdent(v.Name())}
+			return Result{AST: ast.NewIdent(v.Name())}, nil
 		}
-		elemType := typeExpr(v.Elem(), opt)
+		elemType, err := typeExpr(v.Elem(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST: &ast.ArrayType{
 				Len: &ast.BasicLit{Kind: token.INT, Value: fmt.Sprint(v.Len())},
 				Elt: elemType.AST,
 			},
 			RequiresUnexported: elemType.RequiresUnexported,
-		}
+		}, nil
 	case reflect.Interface:
 		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
-				// TODO: bubble up errors
-				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				pkgName, err := opt.packagePathToName(v.PkgPath())
+				if err != nil {
+					return Result{}, err
+				}
 				if pkgName != opt.PackageName {
 					return Result{
 						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
 						RequiresUnexported: !ast.IsExported(v.Name()),
-					}
+					}, nil
 				}
 			}
-			return Result{AST: ast.NewIdent(v.Name())}
+			return Result{AST: ast.NewIdent(v.Name())}, nil
 		}
 		var methods []*ast.Field
 		var requiresUnexported bool
 		for i := 0; i < v.NumMethod(); i++ {
 			method := v.Method(i)
-			methodType := typeExpr(method.Type, opt)
+			methodType, err := typeExpr(method.Type, opt)
+			if err != nil {
+				return Result{}, err
+			}
 			// TODO: omit if not exported and Options.ExportedOnly
 			if methodType.RequiresUnexported {
 				requiresUnexported = true
@@ -480,7 +514,7 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 		return Result{
 			AST:                &ast.InterfaceType{Methods: &ast.FieldList{List: methods}},
 			RequiresUnexported: requiresUnexported,
-		}
+		}, nil
 	case reflect.Func:
 		// TODO: omit if not exported and Options.ExportedOnly
 		// Note: reflect cannot determine parameter/result names. See https://groups.google.com/g/golang-nuts/c/nM_ZhL7fuGc
@@ -491,7 +525,10 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 		for i := 0; i < v.NumIn(); i++ {
 			// TODO: omit if not exported and Options.ExportedOnly
 			param := v.In(i)
-			paramType := typeExpr(param, opt)
+			paramType, err := typeExpr(param, opt)
+			if err != nil {
+				return Result{}, err
+			}
 			if paramType.RequiresUnexported {
 				requiresUnexported = true
 			}
@@ -503,7 +540,10 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 		for i := 0; i < v.NumOut(); i++ {
 			// TODO: omit if not exported and Options.ExportedOnly
 			result := v.Out(i)
-			resultType := typeExpr(result, opt)
+			resultType, err := typeExpr(result, opt)
+			if err != nil {
+				return Result{}, err
+			}
 			if resultType.RequiresUnexported {
 				requiresUnexported = true
 			}
@@ -517,81 +557,99 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 				Results: &ast.FieldList{List: results},
 			},
 			RequiresUnexported: requiresUnexported,
-		}
+		}, nil
 	case reflect.Map:
 		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
-				// TODO: bubble up errors
-				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				pkgName, err := opt.packagePathToName(v.PkgPath())
+				if err != nil {
+					return Result{}, err
+				}
 				if pkgName != opt.PackageName {
 					return Result{
 						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
 						RequiresUnexported: !ast.IsExported(v.Name()),
-					}
+					}, nil
 				}
 			}
 			return Result{
 				AST:                ast.NewIdent(v.Name()),
 				RequiresUnexported: false,
-			}
+			}, nil
 		}
-		keyType := typeExpr(v.Key(), opt)
-		valueType := typeExpr(v.Elem(), opt)
+		keyType, err := typeExpr(v.Key(), opt)
+		if err != nil {
+			return Result{}, err
+		}
+		valueType, err := typeExpr(v.Elem(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST: &ast.MapType{
 				Key:   keyType.AST,
 				Value: valueType.AST,
 			},
 			RequiresUnexported: keyType.RequiresUnexported || valueType.RequiresUnexported,
-		}
+		}, nil
 	case reflect.Ptr:
 		// TODO: omit if not exported and Options.ExportedOnly
-		ptrType := typeExpr(v.Elem(), opt)
+		ptrType, err := typeExpr(v.Elem(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST:                &ast.StarExpr{X: ptrType.AST},
 			RequiresUnexported: ptrType.RequiresUnexported,
-		}
+		}, nil
 	case reflect.Slice:
 		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
-				// TODO: bubble up errors
-				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				pkgName, err := opt.packagePathToName(v.PkgPath())
+				if err != nil {
+					return Result{}, err
+				}
 				if pkgName != opt.PackageName {
 					return Result{
 						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
 						RequiresUnexported: !ast.IsExported(v.Name()),
-					}
+					}, nil
 				}
 			}
-			return Result{AST: ast.NewIdent(v.Name())}
+			return Result{AST: ast.NewIdent(v.Name())}, nil
 		}
-		elemType := typeExpr(v.Elem(), opt)
+		elemType, err := typeExpr(v.Elem(), opt)
+		if err != nil {
+			return Result{}, err
+		}
 		return Result{
 			AST:                &ast.ArrayType{Elt: elemType.AST},
 			RequiresUnexported: elemType.RequiresUnexported,
-		}
+		}, nil
 	case reflect.Struct:
 		// TODO: omit if not exported and Options.ExportedOnly
 		if v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
-				// TODO: bubble up errors
-				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				pkgName, err := opt.packagePathToName(v.PkgPath())
+				if err != nil {
+					return Result{}, err
+				}
 				if pkgName != opt.PackageName {
 					return Result{
 						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
 						RequiresUnexported: !ast.IsExported(v.Name()),
-					}
+					}, nil
 				}
 			}
 			return Result{
 				AST:                ast.NewIdent(v.Name()),
 				RequiresUnexported: false,
-			}
+			}, nil
 		}
 		var (
 			fields                                []*ast.Field
@@ -599,11 +657,14 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 		)
 		for i := 0; i < v.NumField(); i++ {
 			field := v.Field(i)
-			fieldType := typeExpr(field.Type, opt)
+			fieldType, err := typeExpr(field.Type, opt)
+			if err != nil {
+				return Result{}, err
+			}
 			if fieldType.RequiresUnexported {
 				requiresUnexported = true
 				if opt.ExportedOnly {
-					return Result{RequiresUnexported: true}
+					return Result{RequiresUnexported: true}, nil
 				}
 			}
 			if fieldType.OmittedUnexported {
@@ -620,7 +681,7 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 			},
 			RequiresUnexported: requiresUnexported,
 			OmittedUnexported:  omittedUnexported,
-		}
+		}, nil
 	case reflect.UnsafePointer:
 		// TODO: omit if not exported and Options.ExportedOnly
 		// Note: For a plain unsafe.Pointer type, v.PkgPath() does not report "unsafe" but rather
@@ -629,27 +690,31 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 		if !isPlainUnsafePointer && v.Name() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != "" && pkgPath != opt.PackagePath {
-				// TODO: bubble up errors
-				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				pkgName, err := opt.packagePathToName(v.PkgPath())
+				if err != nil {
+					return Result{}, err
+				}
 				if pkgName != opt.PackageName {
 					return Result{
 						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
 						RequiresUnexported: !ast.IsExported(v.Name()),
-					}
+					}, nil
 				}
 			}
 			return Result{
 				AST:                ast.NewIdent(v.Name()),
 				RequiresUnexported: false,
-			}
+			}, nil
 		}
-		return Result{AST: &ast.SelectorExpr{X: ast.NewIdent("unsafe"), Sel: ast.NewIdent("Pointer")}}
+		return Result{AST: &ast.SelectorExpr{X: ast.NewIdent("unsafe"), Sel: ast.NewIdent("Pointer")}}, nil
 	default:
 		if v.PkgPath() != "" {
 			pkgPath := v.PkgPath()
 			if pkgPath != opt.PackagePath {
-				// TODO: bubble up errors
-				pkgName, _ := opt.packagePathToName(pkgPath)
+				pkgName, err := opt.packagePathToName(pkgPath)
+				if err != nil {
+					return Result{}, err
+				}
 				if pkgName != opt.PackageName {
 					return Result{
 						AST: &ast.CallExpr{
@@ -657,11 +722,11 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 							Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
 						},
 						RequiresUnexported: !ast.IsExported(v.Name()),
-					}
+					}, nil
 				}
 			}
 		}
-		return Result{AST: ast.NewIdent(v.Name())}
+		return Result{AST: ast.NewIdent(v.Name())}, nil
 	}
 }
 

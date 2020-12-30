@@ -167,7 +167,6 @@ three`),
 				"bar": 64,
 			},
 		},
-		// TODO: test and handle recursive struct, list, array, pointer
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
@@ -183,6 +182,8 @@ func TestRecursion(t *testing.T) {
 		name string
 		bar  *foo
 	}
+	cyclic := &foo{name: "one"}
+	cyclic.bar = cyclic
 	tests := []struct {
 		name  string
 		input interface{}
@@ -205,6 +206,10 @@ func TestRecursion(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name:  "struct_cyclic",
+			input: cyclic,
 		},
 	}
 	for _, tst := range tests {

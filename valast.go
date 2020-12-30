@@ -161,6 +161,31 @@ type Result struct {
 	RequiresUnexported bool
 }
 
+type cycleDetector struct {
+	seen map[interface{}]int
+}
+
+func (c *cycleDetector) push(ptr interface{}) bool {
+	if c.seen == nil {
+		c.seen = map[interface{}]int{}
+	}
+	cycles, seen := c.seen[ptr]
+	if seen && cycles > 1 {
+		return true
+	}
+	c.seen[ptr] = cycles + 1
+	return false
+}
+
+func (c *cycleDetector) pop(ptr interface{}) {
+	cycles := c.seen[ptr]
+	cycles--
+	if cycles < 0 {
+		cycles = 0
+	}
+	c.seen[ptr] = cycles
+}
+
 // AST converts the given value into its equivalent Go AST expression.
 //
 // The input must be one of these kinds:
@@ -183,7 +208,17 @@ type Result struct {
 // The input type is reflect.Value instead of interface{}, specifically to allow converting
 // interfaces derived from struct fields or other reflection which would otherwise be lost if the
 // input type is interface{}.
+//
+// Cyclic data structures will have their cyclic pointer values emitted twice, followed by a nil
+// value. e.g. for a structure `foo` with field `bar` which points to the original `foo`:
+//
+// 	&foo{id: 123, bar: &foo{id: 123, bar: nil}}
+//
 func AST(v reflect.Value, opt *Options) (Result, error) {
+	return computeAST(v, opt, &cycleDetector{})
+}
+
+func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Result, error) {
 	if opt == nil {
 		opt = &Options{}
 	}
@@ -255,7 +290,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			requiresUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
-			elem, err := AST(vv.Index(i), opt.withUnqualify())
+			elem, err := computeAST(vv.Index(i), opt.withUnqualify(), cycleDetector)
 			if err != nil {
 				return Result{}, err
 			}
@@ -283,9 +318,9 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			}, nil
 		}
 		if opt.Unqualify {
-			return AST(unexported(vv.Elem()), opt.withUnqualify())
+			return computeAST(unexported(vv.Elem()), opt.withUnqualify(), cycleDetector)
 		}
-		v, err := AST(unexported(vv.Elem()), opt)
+		v, err := computeAST(unexported(vv.Elem()), opt, cycleDetector)
 		if err != nil {
 			return Result{}, err
 		}
@@ -311,7 +346,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 		})
 		for _, key := range keys {
 			value := vv.MapIndex(key)
-			k, err := AST(key, opt.withUnqualify())
+			k, err := computeAST(key, opt.withUnqualify(), cycleDetector)
 			if err != nil {
 				return Result{}, err
 			}
@@ -325,7 +360,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			if k.OmittedUnexported {
 				omittedUnexported = true
 			}
-			v, err := AST(value, opt.withUnqualify())
+			v, err := computeAST(value, opt.withUnqualify(), cycleDetector)
 			if err != nil {
 				return Result{}, err
 			}
@@ -380,10 +415,15 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 		if opt.ExportedOnly && ptrType.RequiresUnexported {
 			return Result{RequiresUnexported: true}, nil
 		}
-		elem, err := AST(vv.Elem(), opt)
+		if cycleDetector.push(vv.Interface()) {
+			// cyclic data structure detected
+			return Result{AST: ast.NewIdent("nil")}, nil
+		}
+		elem, err := computeAST(vv.Elem(), opt, cycleDetector)
 		if err != nil {
 			return Result{}, err
 		}
+		cycleDetector.pop(vv.Interface())
 		return Result{
 			AST: &ast.UnaryExpr{
 				Op: token.AND,
@@ -398,7 +438,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			requiresUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
-			elem, err := AST(vv.Index(i), opt.withUnqualify())
+			elem, err := computeAST(vv.Index(i), opt.withUnqualify(), cycleDetector)
 			if err != nil {
 				return Result{}, err
 			}
@@ -433,7 +473,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			if unexported(v.Field(i)).IsZero() {
 				continue
 			}
-			value, err := AST(unexported(v.Field(i)), opt.withUnqualify())
+			value, err := computeAST(unexported(v.Field(i)), opt.withUnqualify(), cycleDetector)
 			if err != nil {
 				return Result{}, err
 			}

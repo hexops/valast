@@ -1,0 +1,1 @@
+&valast.foo{name: "one", bar: &valast.foo{name: "two", bar: &valast.foo{name: "three", bar: &valast.foo{name: "four", bar: &valast.foo{name: "five"}}}}}

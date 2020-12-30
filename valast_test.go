@@ -29,7 +29,6 @@ func TestString(t *testing.T) {
 		name  string
 		input interface{}
 		opt   *Options
-		err   string
 	}{
 		{
 			name:  "bool",
@@ -169,6 +168,44 @@ three`),
 			},
 		},
 		// TODO: test and handle recursive struct, list, array, pointer
+	}
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			got := StringWithOptions(tst.input, tst.opt)
+			autogold.Equal(t, got)
+		})
+	}
+}
+
+// TestRecursion tests how recursive and cyclic data types/values are handled.
+func TestRecursion(t *testing.T) {
+	type foo struct {
+		name string
+		bar  *foo
+	}
+	tests := []struct {
+		name  string
+		input interface{}
+		opt   *Options
+	}{
+		{
+			name: "basic",
+			input: &foo{
+				name: "one",
+				bar: &foo{
+					name: "two",
+					bar: &foo{
+						name: "three",
+						bar: &foo{
+							name: "four",
+							bar: &foo{
+								name: "five",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

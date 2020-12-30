@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"go/token"
 	"reflect"
+	"sort"
 	"strconv"
 
 	"github.com/shurcooL/go-goon/bypass"
@@ -299,12 +300,14 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			RequiresUnexported: interfaceType.RequiresUnexported || v.RequiresUnexported,
 		}, nil
 	case reflect.Map:
-		// TODO: stable sorting of map keys
 		var (
 			keyValueExprs                         []ast.Expr
 			requiresUnexported, omittedUnexported bool
 			keys                                  = vv.MapKeys()
 		)
+		sort.Slice(keys, func(i, j int) bool {
+			return valueLess(keys[i], keys[j])
+		})
 		for _, key := range keys {
 			value := vv.MapIndex(key)
 			k, err := AST(key, opt.withUnqualify())
@@ -779,4 +782,73 @@ func unexported(v reflect.Value) reflect.Value {
 		return v
 	}
 	return bypass.UnsafeReflectValue(v)
+}
+
+// valueLess tells if i is less than j, according to normal Go less-than < operator rules. Values
+// that are unsortable according to Go rules will always yield true.
+//
+// The two values must be of the same kind or a panic will occur.
+func valueLess(i, j reflect.Value) bool {
+	ii := unexported(i)
+	switch ii.Kind() {
+	case reflect.Bool:
+		x := 0
+		if ii.Bool() {
+			x = 1
+		}
+		y := 0
+		if unexported(j).Bool() {
+			y = 1
+		}
+		return x < y
+	case reflect.Int:
+		return ii.Int() < unexported(j).Int()
+	case reflect.Int8:
+		return ii.Int() < unexported(j).Int()
+	case reflect.Int16:
+		return ii.Int() < unexported(j).Int()
+	case reflect.Int32:
+		return ii.Int() < unexported(j).Int()
+	case reflect.Int64:
+		return ii.Int() < unexported(j).Int()
+	case reflect.Uint:
+		return ii.Uint() < unexported(j).Uint()
+	case reflect.Uint8:
+		return ii.Uint() < unexported(j).Uint()
+	case reflect.Uint16:
+		return ii.Uint() < unexported(j).Uint()
+	case reflect.Uint32:
+		return ii.Uint() < unexported(j).Uint()
+	case reflect.Uint64:
+		return ii.Uint() < unexported(j).Uint()
+	case reflect.Uintptr:
+		return ii.Uint() < unexported(j).Uint()
+	case reflect.Float32:
+		return ii.Float() < unexported(j).Float()
+	case reflect.Float64:
+		return ii.Float() < unexported(j).Float()
+	case reflect.Ptr:
+		return ii.Pointer() < unexported(j).Pointer()
+	case reflect.String:
+		return ii.String() < unexported(j).String()
+	case reflect.UnsafePointer:
+		return ii.Pointer() < unexported(j).Pointer()
+	case reflect.Complex64:
+		return true
+	case reflect.Complex128:
+		return true
+	case reflect.Array:
+		return true
+	case reflect.Map:
+		return true
+	case reflect.Interface:
+		return true
+	case reflect.Slice:
+		return true
+	case reflect.Struct:
+		return true
+	default:
+		// never here
+		return true
+	}
 }

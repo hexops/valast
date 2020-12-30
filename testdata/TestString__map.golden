@@ -1,1 +1,1 @@
-map[string]int32{"foo": 32, "bar": 64}
+map[string]int32{"bar": 64, "foo": 32}

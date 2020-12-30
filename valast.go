@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/shurcooL/go-goon/bypass"
 	"golang.org/x/tools/go/packages"
@@ -418,7 +419,10 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			RequiresUnexported: requiresUnexported || sliceType.RequiresUnexported,
 		}, nil
 	case reflect.String:
-		// TODO: format long strings, strings with unicode, etc. more nicely
+		s := v.String()
+		if len(s) > 40 && strings.Contains(s, "\n") && !strings.Contains(s, "`") {
+			return basicLit(vv, token.STRING, "string", "`"+s+"`", opt)
+		}
 		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt)
 	case reflect.Struct:
 		var (

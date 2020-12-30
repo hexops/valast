@@ -620,3 +620,38 @@ func TestUnexportedInputs(t *testing.T) {
 		})
 	}
 }
+
+func TestStringFormatting(t *testing.T) {
+	tests := []struct {
+		name  string
+		input interface{}
+	}{
+		{
+			name:  "short_single_line",
+			input: "hello world",
+		},
+		{
+			name:  "long_single_line_180",
+			input: "hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world ",
+		},
+		{
+			name:  "short_multi_line",
+			input: "hello\nworld",
+		},
+		{
+			name: "long_multi_line_180",
+			input: `hello world hello world hello world hello world hello world hello world hello world hello world
+hello world hello world hello world hello world hello world hello world hello world`,
+		},
+		{
+			name:  "long_multi_line_with_backticks",
+			input: "hello world hello world hello world hello world hello world hello world hello world hello world\n`hello world hello world hello world hello world hello world hello world hello world",
+		},
+	}
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			got := String(tst.input)
+			autogold.Equal(t, got)
+		})
+	}
+}

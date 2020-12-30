@@ -475,20 +475,16 @@ func TestExportedOnly_nested(t *testing.T) {
 			input: test.NewBaz(),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast", ExportedOnly: true},
 		},
-		/*
-			{
-				// TODO: BUG: nil pointer panic
-				name: "struct_same_package_unexported_field_omitted",
-				input: ExportedBaz{
-					Bam: 1.34,
-					zeta: foo{
-						bar: "hello",
-					},
+		{
+			name: "struct_same_package_unexported_field_omitted",
+			input: ExportedBaz{
+				Bam: 1.34,
+				zeta: foo{
+					bar: "hello",
 				},
-				err: "valast: cannot convert value of kind:struct type:valast.baz",
-				opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
 			},
-		*/
+			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+		},
 		{
 			name: "interface",
 			input: struct {

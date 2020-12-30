@@ -95,13 +95,6 @@ func String(v reflect.Value, opt *Options) (string, error) {
 	if opt.ExportedOnly && result.RequiresUnexported {
 		return "", fmt.Errorf("valast: cannot convert unexported value %T", v.Interface())
 	}
-	if result.AST == nil {
-		var typ = "nil"
-		if v != (reflect.Value{}) {
-			typ = fmt.Sprintf("%T", v.Interface())
-		}
-		return "", fmt.Errorf("valast: cannot convert value of kind:%s type:%s", v.Kind(), typ)
-	}
 	if err := format.Node(&buf, token.NewFileSet(), result.AST); err != nil {
 		return "", err
 	}
@@ -387,16 +380,13 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			if value.OmittedUnexported {
 				omittedUnexported = true
 			}
-			if value.AST == nil {
-				continue // TODO: raise error? e.g. pointer to interface
-			}
 			structValue = append(structValue, &ast.KeyValueExpr{
 				Key:   ast.NewIdent(v.Type().Field(i).Name),
 				Value: value.AST,
 			})
 		}
 		structType := typeExpr(vv.Type(), opt)
-		if structType.AST == nil {
+		if opt.ExportedOnly && structType.RequiresUnexported {
 			return Result{RequiresUnexported: true}, nil
 		}
 		return Result{

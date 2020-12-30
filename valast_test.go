@@ -656,7 +656,6 @@ func TestUnexportedInputs(t *testing.T) {
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: nil pointer panic
 			name:  "struct",
 			input: unexportedStruct{A: "b"},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},

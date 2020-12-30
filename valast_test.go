@@ -625,16 +625,13 @@ func TestUnexportedInputs(t *testing.T) {
 			input: unexportedArray{1.0},
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
-		/*
-			{
-				// TODO: BUG: nil pointer panic
-				name: "interface",
-				input: struct {
-					V unexportedInterface
-				}{V: nil},
-				opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
-			},
-		*/
+		{
+			name: "interface",
+			input: struct {
+				V unexportedInterface
+			}{V: nil},
+			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
 		{
 			name: "map",
 			input: unexportedMap{

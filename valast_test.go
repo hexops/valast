@@ -655,15 +655,12 @@ func TestUnexportedInputs(t *testing.T) {
 			input: unexportedString("hello"),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
-		/*
-			{
-				// TODO: BUG: nil pointer panic
-				name:  "struct",
-				input: unexportedStruct{A: "b"},
-				opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
-				err:   "valast: cannot convert value of kind:struct type:valast.unexportedStruct",
-			},
-		*/
+		{
+			// TODO: BUG: nil pointer panic
+			name:  "struct",
+			input: unexportedStruct{A: "b"},
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
 		{
 			name:  "unsafe_pointer",
 			input: unexportedUnsafePointer(uintptr(0xdeadbeef)),

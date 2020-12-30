@@ -333,10 +333,28 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.Ptr:
-		opt.Unqualify = false
 		if vv.Elem().Kind() == reflect.Interface {
 			// Pointer to interface; cannot be created in a single expression.
 			return Result{}, &ErrPointerToInterface{Value: vv.Interface()}
+		}
+		ptrType, err := typeExpr(vv.Type(), opt)
+		if err != nil {
+			return Result{}, err
+		}
+		if vv.IsNil() {
+			if opt.Unqualify {
+				return Result{AST: ast.NewIdent("nil")}, nil
+			}
+			return Result{
+				AST: &ast.CallExpr{
+					Fun:  &ast.ParenExpr{X: ptrType.AST},
+					Args: []ast.Expr{ast.NewIdent("nil")},
+				},
+				RequiresUnexported: ptrType.RequiresUnexported,
+			}, nil
+		}
+		if opt.ExportedOnly && ptrType.RequiresUnexported {
+			return Result{RequiresUnexported: true}, nil
 		}
 		elem, err := AST(vv.Elem(), opt)
 		if err != nil {
@@ -347,7 +365,8 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 				Op: token.AND,
 				X:  elem.AST,
 			},
-			RequiresUnexported: elem.RequiresUnexported,
+			RequiresUnexported: ptrType.RequiresUnexported || elem.RequiresUnexported,
+			OmittedUnexported:  elem.OmittedUnexported,
 		}, nil
 	case reflect.Slice:
 		var (
@@ -588,6 +607,22 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: keyType.RequiresUnexported || valueType.RequiresUnexported,
 		}, nil
 	case reflect.Ptr:
+		if v.Name() != "" {
+			pkgPath := v.PkgPath()
+			if pkgPath != "" && pkgPath != opt.PackagePath {
+				pkgName, err := opt.packagePathToName(v.PkgPath())
+				if err != nil {
+					return Result{}, err
+				}
+				if pkgName != opt.PackageName {
+					return Result{
+						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
+						RequiresUnexported: !ast.IsExported(v.Name()),
+					}, nil
+				}
+			}
+			return Result{AST: ast.NewIdent(v.Name())}, nil
+		}
 		ptrType, err := typeExpr(v.Elem(), opt)
 		if err != nil {
 			return Result{}, err

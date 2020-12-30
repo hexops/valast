@@ -418,10 +418,10 @@ func TestExportedOnly_input(t *testing.T) {
 			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
 		},
 		{
-			// TODO: BUG: expect nil output
 			name:  "pointer",
 			input: unexportedPointer(nil),
 			opt:   &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err:   "valast: cannot convert unexported value valast.unexportedPointer",
 		},
 		{
 			name:  "slice",
@@ -640,7 +640,6 @@ func TestUnexportedInputs(t *testing.T) {
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
-			// TODO: BUG: produces illegal &nil
 			name:  "pointer",
 			input: unexportedPointer(nil),
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},

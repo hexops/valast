@@ -1,1 +1,1 @@
-map[string]string{"a": "b"}
+unexportedMap{"a": "b"}

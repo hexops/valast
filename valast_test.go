@@ -390,6 +390,7 @@ func TestExportedOnly_input(t *testing.T) {
 				"a": "b",
 			},
 			opt: &Options{PackageName: "other", PackagePath: "github.com/other/other", ExportedOnly: true},
+			err: "valast: cannot convert unexported value valast.unexportedMap",
 		},
 		{
 			name:  "map_unexported_key_type",
@@ -642,7 +643,6 @@ func TestUnexportedInputs(t *testing.T) {
 			},
 		*/
 		{
-			// TODO: BUG: map[string]string{"a": "b"} should be unexportedMap{"a": "b"}
 			name: "map",
 			input: unexportedMap{
 				"a": "b",

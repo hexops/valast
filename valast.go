@@ -524,6 +524,23 @@ func typeExpr(v reflect.Type, opt *Options) Result {
 		}
 	case reflect.Map:
 		// TODO: omit if not exported and Options.ExportedOnly
+		if v.Name() != "" {
+			pkgPath := v.PkgPath()
+			if pkgPath != "" && pkgPath != opt.PackagePath {
+				// TODO: bubble up errors
+				pkgName, _ := opt.packagePathToName(v.PkgPath())
+				if pkgName != opt.PackageName {
+					return Result{
+						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
+						RequiresUnexported: !ast.IsExported(v.Name()),
+					}
+				}
+			}
+			return Result{
+				AST:                ast.NewIdent(v.Name()),
+				RequiresUnexported: false,
+			}
+		}
 		keyType := typeExpr(v.Key(), opt)
 		valueType := typeExpr(v.Elem(), opt)
 		return Result{

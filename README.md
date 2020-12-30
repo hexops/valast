@@ -1,6 +1,6 @@
 # valast - convert Go values to their AST <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/master/readme.svg"></img></a>
 
-<a href="https://pkg.go.dev/badge/github.com/hexops/valast"><img src="https://pkg.go.dev/badge/badge/github.com/hexops/valast.svg" alt="Go Reference" align="right"></a>
+<a href="https://pkg.go.dev/github.com/hexops/valast"><img src="https://pkg.go.dev/badge/badge/github.com/hexops/valast.svg" alt="Go Reference" align="right"></a>
 
 Valast converts Go values at runtime into their `go/ast` equivalent, e.g.:
 

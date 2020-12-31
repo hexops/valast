@@ -111,17 +111,17 @@ three`),
 		{
 			name: "array",
 			input: [2]*baz{
-				&baz{Beta: "foo"},
-				&baz{Beta: 123},
+				{Beta: "foo"},
+				{Beta: 123},
 			},
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 		{
 			name: "slice",
 			input: []*baz{
-				&baz{Beta: "foo"},
-				&baz{Beta: 123},
-				&baz{Beta: 3},
+				{Beta: "foo"},
+				{Beta: 123},
+				{Beta: 3},
 			},
 			opt: &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},

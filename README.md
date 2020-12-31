@@ -2,7 +2,7 @@
 
 <a href="https://pkg.go.dev/github.com/hexops/valast"><img src="https://pkg.go.dev/badge/badge/github.com/hexops/valast.svg" alt="Go Reference" align="right"></a>
   
-[![Go CI](https://github.com/hexops/valast/workflows/Go%20CI/badge.svg)](https://github.com/hexops/valast/actions) [![codecov](https://codecov.io/gh/hexops/valast/branch/main/graph/badge.svg?token=Iw1FdYk0m8)](https://codecov.io/gh/hexops/valast)
+[![Go CI](https://github.com/hexops/valast/workflows/Go%20CI/badge.svg)](https://github.com/hexops/valast/actions) [![codecov](https://codecov.io/gh/hexops/valast/branch/main/graph/badge.svg?token=Iw1FdYk0m8)](https://codecov.io/gh/hexops/valast) [![Go Report Card](https://goreportcard.com/badge/github.com/hexops/valast)](https://goreportcard.com/report/github.com/hexops/valast)
 
 Valast converts Go values at runtime into their `go/ast` equivalent, e.g.:
 

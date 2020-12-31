@@ -1,6 +1,4 @@
 name: Go CI
-description: "Run Go tests"
-author: "Hexops"
 on:
   - push
 jobs:

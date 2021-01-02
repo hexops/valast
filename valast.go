@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
+	"io"
 	"reflect"
 	"sort"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/shurcooL/go-goon/bypass"
 	"golang.org/x/tools/go/packages"
+	gofumpt "mvdan.cc/gofumpt/format"
 )
 
 // Options describes options for the conversion process.
@@ -96,10 +98,47 @@ func StringWithOptions(v interface{}, opt *Options) string {
 	if opt.ExportedOnly && result.RequiresUnexported {
 		return fmt.Sprintf("valast: cannot convert unexported value %T", v)
 	}
-	if err := format.Node(&buf, token.NewFileSet(), result.AST); err != nil {
+	if err := gofumptFormatExpr(&buf, token.NewFileSet(), result.AST, gofumpt.Options{
+		ExtraRules: true,
+	}); err != nil {
 		return fmt.Sprintf("valast: format: %v", err)
 	}
 	return buf.String()
+}
+
+// gofumptFormatExpr is a slight hack to get gofumpt to format an ast.Expr node, because the
+// gofumpt/format package does not expose node-level formatting currently.
+func gofumptFormatExpr(w io.Writer, fset *token.FileSet, expr ast.Expr, opt gofumpt.Options) error {
+	// First use go/format to convert the expression to Go syntax.
+	var tmp bytes.Buffer
+	if err := format.Node(&tmp, fset, expr); err != nil {
+		return err
+	}
+
+	// Create a temporary file with our expression, run gofumpt on it, and extract the result.
+	fileStart := `package main
+
+func main() {
+	v := `
+	fileEnd := `
+}
+`
+	tmpFile := []byte(fileStart + tmp.String() + fileEnd)
+	formattedFile, err := gofumpt.Source(tmpFile, opt)
+	if err != nil {
+		return err
+	}
+	formattedFile = bytes.TrimPrefix(formattedFile, []byte(fileStart))
+	formattedFile = bytes.TrimSuffix(formattedFile, []byte(fileEnd))
+
+	// Remove leading indention.
+	lines := bytes.Split(formattedFile, []byte{'\n'})
+	for i, line := range lines {
+		lines[i] = bytes.TrimPrefix(line, []byte{'\t'})
+	}
+	formattedExpr := bytes.Join(lines, []byte{'\n'})
+	_, err = w.Write(formattedExpr)
+	return err
 }
 
 func basicLit(vv reflect.Value, kind token.Token, builtinType string, v interface{}, opt *Options) (Result, error) {

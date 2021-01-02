@@ -22,13 +22,27 @@ Prints string:
 
 ## What is this useful for?
 
-This can be useful for debugging and testing, you may think of it as a more comprehensive and configurable version of the `fmt` package's `%+v` and `%#v` formatting directives.
+This can be useful for debugging and testing, you may think of it as a more comprehensive and configurable version of the `fmt` package's `%+v` and `%#v` formatting directives. It is similar to e.g. `repr` in Python.
 
-## Alternatives
+## Features
 
-The following are alternatives to valast:
+- Produces Go code via a `go/ast`, defers formatting to the best-in-class Go formatter [gofumpt](https://github.com/mvdan/gofumpt).
+- Fully handles unexported fields, types, and values (optional.)
+- Strong emphasis on being used for producing valid Go code that can be copy & pasted directly into e.g. tests.
+- Extensively tested.
 
-- [github.com/davecgh/go-spew](https://github.com/davecgh/go-spew) ([may be inactive](https://github.com/davecgh/go-spew/issues/128), produces a Go-like syntax but not exactly Go syntax)
-- [github.com/shurcooL/go-goon](https://github.com/shurcooL/go-goon) (based on go-spew, produces valid Go syntax but not via a `go/ast`, [produces less idiomatic/terse results](https://github.com/shurcooL/go-goon/issues/11))
+## Alternatives comparison
+
+The following are alternatives to Valast, making note of the differences we found that let us to create Valast:
+
+- [github.com/davecgh/go-spew](https://github.com/davecgh/go-spew)
+    - [may be inactive](https://github.com/davecgh/go-spew/issues/128)
+    - Produces Go-like output, but not Go syntax.
+- [github.com/shurcooL/go-goon](https://github.com/shurcooL/go-goon) (based on go-spew)
+    - Produces valid Go syntax, but not via a `go/ast`.
+    - [Produces less idiomatic/terse results](https://github.com/shurcooL/go-goon/issues/11))
+- [github.com/alecthomas/repr](https://github.com/alecthomas/repr)
+    - Produces Go syntax, but not always valid code (e.g. allows `&23`), not via a `go/ast`.
+    - [Does not handle unexported fields/types/values.](https://github.com/alecthomas/repr/pull/13)
 
 You may also wish to look at [autogold](https://github.com/hexops/autogold) and [go-cmp](https://github.com/google/go-cmp), which aim to solve the "compare Go values in a test" problem.

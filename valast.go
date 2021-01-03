@@ -22,8 +22,8 @@ type Options struct {
 	// Unqualify, if true, indicates that types should be unqualified. e.g.:
 	//
 	// 	int(8)           -> 8
-	//  Bar{}            -> Bar{}
-	//  string("foobar") -> "foobar"
+	// 	Bar{}            -> Bar{}
+	// 	string("foobar") -> "foobar"
 	//
 	// This is set to true automatically when operating within a context where type qualification
 	// is definitively not needed, e.g. when producing values for a struct or map.

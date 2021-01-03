@@ -5,6 +5,7 @@ func formatCompositeLiterals(input []rune) []rune {
 		inStringLiteral, inRawStringLiteral bool
 		depth                               int
 		breakFields                         bool
+		lineWidth                           int
 		result                              []rune
 	)
 	for i, r := range input {
@@ -23,6 +24,9 @@ func formatCompositeLiterals(input []rune) []rune {
 			}
 			if r == '\n' {
 				depth = 0
+				lineWidth = 0
+			} else {
+				lineWidth++
 			}
 			result = append(result, r)
 		default:
@@ -38,6 +42,12 @@ func formatCompositeLiterals(input []rune) []rune {
 			}
 			if r == '\n' {
 				depth = 0
+				lineWidth = 0
+			} else {
+				lineWidth++
+			}
+			if lineWidth >= 50 {
+				breakFields = true
 			}
 			if r == ',' && breakFields {
 				result = append(result, r)

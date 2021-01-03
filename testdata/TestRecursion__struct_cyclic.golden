@@ -1,1 +1,4 @@
-&valast.foo{name: "one", bar: &valast.foo{name: "one", bar: nil}}
+&valast.foo{name: "one", bar: &valast.foo{
+	name: "one",
+	bar:  nil,
+}}

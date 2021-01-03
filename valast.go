@@ -115,6 +115,10 @@ func gofumptFormatExpr(w io.Writer, fset *token.FileSet, expr ast.Expr, opt gofu
 		return err
 	}
 
+	// HACK: Split composite literals onto multiple lines to avoid extra long struct values. We
+	// will defer this to gofumpt once it can perform this: https://github.com/mvdan/gofumpt/pull/70
+	tmpString := string(formatCompositeLiterals([]rune(tmp.String())))
+
 	// Create a temporary file with our expression, run gofumpt on it, and extract the result.
 	fileStart := `package main
 
@@ -123,7 +127,7 @@ func main() {
 	fileEnd := `
 }
 `
-	tmpFile := []byte(fileStart + tmp.String() + fileEnd)
+	tmpFile := []byte(fileStart + tmpString + fileEnd)
 	formattedFile, err := gofumpt.Source(tmpFile, opt)
 	if err != nil {
 		return err

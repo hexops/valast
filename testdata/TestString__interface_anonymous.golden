@@ -3,4 +3,6 @@
 		Baz() error
 		String() string
 	}
-}{v: &test.Baz{Bam: (1.34 + 0i), zeta: &test.foo{bar: "hello"}}}
+}{v: &test.Baz{Bam: (1.34 + 0i), zeta: &test.foo{
+	bar: "hello",
+}}}

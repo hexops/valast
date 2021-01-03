@@ -1,1 +1,7 @@
-[]*baz{&baz{Beta: "foo"}, &baz{Beta: 123}, &baz{Beta: 3}}
+[]*baz{
+	&baz{
+		Beta: "foo",
+	},
+	&baz{Beta: 123},
+	&baz{Beta: 3},
+}

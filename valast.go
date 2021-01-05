@@ -651,24 +651,27 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 
 // typeExpr returns an AST type expression for the value v.
 func typeExpr(v reflect.Type, opt *Options) (Result, error) {
+	if v.Kind() != reflect.UnsafePointer && v.Name() != "" {
+		pkgPath := v.PkgPath()
+		if pkgPath != "" && pkgPath != opt.PackagePath {
+			pkgName, err := opt.packagePathToName(v.PkgPath())
+			if err != nil {
+				return Result{}, err
+			}
+			if pkgName != opt.PackageName {
+				return Result{
+					AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
+					RequiresUnexported: !ast.IsExported(v.Name()),
+				}, nil
+			}
+		}
+		return Result{
+			AST:                ast.NewIdent(v.Name()),
+			RequiresUnexported: false,
+		}, nil
+	}
 	switch v.Kind() {
 	case reflect.Array:
-		if v.Name() != "" {
-			pkgPath := v.PkgPath()
-			if pkgPath != "" && pkgPath != opt.PackagePath {
-				pkgName, err := opt.packagePathToName(v.PkgPath())
-				if err != nil {
-					return Result{}, err
-				}
-				if pkgName != opt.PackageName {
-					return Result{
-						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
-						RequiresUnexported: !ast.IsExported(v.Name()),
-					}, nil
-				}
-			}
-			return Result{AST: ast.NewIdent(v.Name())}, nil
-		}
 		elemType, err := typeExpr(v.Elem(), opt)
 		if err != nil {
 			return Result{}, err
@@ -681,22 +684,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: elemType.RequiresUnexported,
 		}, nil
 	case reflect.Interface:
-		if v.Name() != "" {
-			pkgPath := v.PkgPath()
-			if pkgPath != "" && pkgPath != opt.PackagePath {
-				pkgName, err := opt.packagePathToName(v.PkgPath())
-				if err != nil {
-					return Result{}, err
-				}
-				if pkgName != opt.PackageName {
-					return Result{
-						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
-						RequiresUnexported: !ast.IsExported(v.Name()),
-					}, nil
-				}
-			}
-			return Result{AST: ast.NewIdent(v.Name())}, nil
-		}
 		var methods []*ast.Field
 		var requiresUnexported bool
 		for i := 0; i < v.NumMethod(); i++ {
@@ -758,25 +745,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: requiresUnexported,
 		}, nil
 	case reflect.Map:
-		if v.Name() != "" {
-			pkgPath := v.PkgPath()
-			if pkgPath != "" && pkgPath != opt.PackagePath {
-				pkgName, err := opt.packagePathToName(v.PkgPath())
-				if err != nil {
-					return Result{}, err
-				}
-				if pkgName != opt.PackageName {
-					return Result{
-						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
-						RequiresUnexported: !ast.IsExported(v.Name()),
-					}, nil
-				}
-			}
-			return Result{
-				AST:                ast.NewIdent(v.Name()),
-				RequiresUnexported: false,
-			}, nil
-		}
 		keyType, err := typeExpr(v.Key(), opt)
 		if err != nil {
 			return Result{}, err
@@ -793,22 +761,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: keyType.RequiresUnexported || valueType.RequiresUnexported,
 		}, nil
 	case reflect.Ptr:
-		if v.Name() != "" {
-			pkgPath := v.PkgPath()
-			if pkgPath != "" && pkgPath != opt.PackagePath {
-				pkgName, err := opt.packagePathToName(v.PkgPath())
-				if err != nil {
-					return Result{}, err
-				}
-				if pkgName != opt.PackageName {
-					return Result{
-						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
-						RequiresUnexported: !ast.IsExported(v.Name()),
-					}, nil
-				}
-			}
-			return Result{AST: ast.NewIdent(v.Name())}, nil
-		}
 		ptrType, err := typeExpr(v.Elem(), opt)
 		if err != nil {
 			return Result{}, err
@@ -818,22 +770,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: ptrType.RequiresUnexported,
 		}, nil
 	case reflect.Slice:
-		if v.Name() != "" {
-			pkgPath := v.PkgPath()
-			if pkgPath != "" && pkgPath != opt.PackagePath {
-				pkgName, err := opt.packagePathToName(v.PkgPath())
-				if err != nil {
-					return Result{}, err
-				}
-				if pkgName != opt.PackageName {
-					return Result{
-						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
-						RequiresUnexported: !ast.IsExported(v.Name()),
-					}, nil
-				}
-			}
-			return Result{AST: ast.NewIdent(v.Name())}, nil
-		}
 		elemType, err := typeExpr(v.Elem(), opt)
 		if err != nil {
 			return Result{}, err
@@ -843,25 +779,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: elemType.RequiresUnexported,
 		}, nil
 	case reflect.Struct:
-		if v.Name() != "" {
-			pkgPath := v.PkgPath()
-			if pkgPath != "" && pkgPath != opt.PackagePath {
-				pkgName, err := opt.packagePathToName(v.PkgPath())
-				if err != nil {
-					return Result{}, err
-				}
-				if pkgName != opt.PackageName {
-					return Result{
-						AST:                &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
-						RequiresUnexported: !ast.IsExported(v.Name()),
-					}, nil
-				}
-			}
-			return Result{
-				AST:                ast.NewIdent(v.Name()),
-				RequiresUnexported: false,
-			}, nil
-		}
 		var (
 			fields                                []*ast.Field
 			requiresUnexported, omittedUnexported bool
@@ -918,24 +835,6 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 		}
 		return Result{AST: &ast.SelectorExpr{X: ast.NewIdent("unsafe"), Sel: ast.NewIdent("Pointer")}}, nil
 	default:
-		if v.PkgPath() != "" {
-			pkgPath := v.PkgPath()
-			if pkgPath != opt.PackagePath {
-				pkgName, err := opt.packagePathToName(pkgPath)
-				if err != nil {
-					return Result{}, err
-				}
-				if pkgName != opt.PackageName {
-					return Result{
-						AST: &ast.CallExpr{
-							Fun:  &ast.SelectorExpr{X: ast.NewIdent(pkgName), Sel: ast.NewIdent(v.Name())},
-							Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
-						},
-						RequiresUnexported: !ast.IsExported(v.Name()),
-					}, nil
-				}
-			}
-		}
 		return Result{AST: ast.NewIdent(v.Name())}, nil
 	}
 }

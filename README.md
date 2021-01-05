@@ -42,7 +42,7 @@ The following are alternatives to Valast, making note of the differences we foun
     - Produces valid Go syntax, but not via a `go/ast`.
     - [Produces less idiomatic/terse results](https://github.com/shurcooL/go-goon/issues/11))
 - [github.com/alecthomas/repr](https://github.com/alecthomas/repr)
-    - Produces Go syntax, but not always valid code (e.g. allows `&23`), not via a `go/ast`.
+    - Produces Go syntax, but not always valid code (e.g. can emit illegal `&23`, whereas Valast will emit a valid expression `valast.Addr(23).(int)`), not via a `go/ast`.
     - [Does not handle unexported fields/types/values.](https://github.com/alecthomas/repr/pull/13)
 
 You may also wish to look at [autogold](https://github.com/hexops/autogold) and [go-cmp](https://github.com/google/go-cmp), which aim to solve the "compare Go values in a test" problem.

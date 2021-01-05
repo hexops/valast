@@ -214,18 +214,6 @@ func (e *ErrInvalidType) Error() string {
 	return fmt.Sprintf("valast: cannot convert value of type %T", e.Value)
 }
 
-// ErrPointerToInterface describes that a pointer to an interface was encountered, such values are
-// impossible to create in a single Go expression and thus not supported by valast.
-type ErrPointerToInterface struct {
-	// Value is the actual pointer to the interface that was found.
-	Value interface{}
-}
-
-// Error implements the error interface.
-func (e *ErrPointerToInterface) Error() string {
-	return fmt.Sprintf("valast: pointers to interfaces are not allowed, found %T", e.Value)
-}
-
 // Result is a result from converting a Go value into its AST.
 type Result struct {
 	// AST is the actual Go AST expression for the value.
@@ -473,16 +461,12 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.Ptr:
-		isPtrToNilInterface := vv.Elem().Kind() == reflect.Interface && vv.Elem().IsNil()
-		if !isPtrToNilInterface && vv.Elem().Kind() == reflect.Interface {
-			// Pointer to interface; cannot be created in a single expression.
-			return Result{}, &ErrPointerToInterface{Value: vv.Interface()}
-		}
 		ptrType, err := typeExpr(vv.Type(), opt)
 		if err != nil {
 			return Result{}, err
 		}
-		if !isPtrToNilInterface && vv.IsNil() {
+		isPtrToInterface := vv.Elem().Kind() == reflect.Interface
+		if !isPtrToInterface && vv.IsNil() {
 			if opt.Unqualify {
 				return Result{AST: ast.NewIdent("nil")}, nil
 			}
@@ -507,8 +491,8 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 		}
 		cycleDetector.pop(vv.Interface())
 
-		if isPtrToNilInterface {
-			// Pointers to nil interfaces can be created with help from valast.AddrInterface.
+		if isPtrToInterface {
+			// Pointers to interfaces can be created with help from valast.AddrInterface.
 			return Result{
 				AST: &ast.TypeAssertExpr{
 					X: &ast.CallExpr{

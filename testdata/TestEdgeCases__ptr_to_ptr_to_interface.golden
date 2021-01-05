@@ -1,1 +1,9 @@
-valast: pointers to interfaces are not allowed, found *test.Bazer
+&struct {
+	v **test.Bazer
+}{v: valast.Addr(valast.AddrInterface(&test.Baz{
+	Bam: (1.34 + 0i),
+	zeta: &test.foo{
+		bar: "hello",
+	},
+},
+	(*test.Bazer)(nil)).(*test.Bazer)).(**test.Bazer)}

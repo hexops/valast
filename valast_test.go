@@ -224,8 +224,10 @@ func TestRecursion(t *testing.T) {
 // categories.
 func TestEdgeCases(t *testing.T) {
 	var (
-		nilInterfacePointerBug test.Bazer
-		bazer                  test.Bazer = test.NewBaz()
+		nilInterface               test.Bazer
+		nilInterfacePointer                   = &nilInterface
+		nilInterfacePointerPointer            = &nilInterfacePointer
+		bazer                      test.Bazer = test.NewBaz()
 	)
 	tests := []struct {
 		name  string
@@ -242,7 +244,19 @@ func TestEdgeCases(t *testing.T) {
 			name: "ptr_to_nil_interface",
 			input: &struct {
 				v *test.Bazer
-			}{v: &nilInterfacePointerBug},
+			}{v: &nilInterface},
+		},
+		{
+			name: "ptr2_to_nil_interface",
+			input: &struct {
+				v **test.Bazer
+			}{v: &nilInterfacePointer},
+		},
+		{
+			name: "ptr3_to_nil_interface",
+			input: &struct {
+				v ***test.Bazer
+			}{v: &nilInterfacePointerPointer},
 		},
 		{
 			name: "nil_interface_pointer",

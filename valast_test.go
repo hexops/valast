@@ -244,6 +244,12 @@ func TestEdgeCases(t *testing.T) {
 				v *test.Bazer
 			}{v: &nilInterfacePointerBug},
 		},
+		{
+			name: "nil_interface_pointer",
+			input: &struct {
+				v *test.Bazer
+			}{v: nil},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

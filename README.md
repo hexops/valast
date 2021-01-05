@@ -29,7 +29,7 @@ This can be useful for debugging and testing, you may think of it as a more comp
 - Produces Go code via a `go/ast`, defers formatting to the best-in-class Go formatter [gofumpt](https://github.com/mvdan/gofumpt).
 - Fully handles unexported fields, types, and values (optional.)
 - Strong emphasis on being used for producing valid Go code that can be copy & pasted directly into e.g. tests.
-- Extensively tested.
+- [Extensively tested](https://github.com/hexops/valast/tree/main/testdata), over 88 tests and handling numerous edge cases (such as pointers to unaddressable literal values like `&"foo"` properly, and even [finding bugs in alternative packages'](https://github.com/shurcooL/go-goon/issues/15)).
 
 ## Alternatives comparison
 

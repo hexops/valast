@@ -233,18 +233,13 @@ func TestEdgeCases(t *testing.T) {
 		opt   *Options
 	}{
 		{
-			name: "interface_pointer",
+			name: "ptr_to_interface",
 			input: &struct {
 				v *test.Bazer
 			}{v: &bazer},
 		},
 		{
-			// Ensures it does not produce &nil:
-			//
-			// 	./valast_test.go:179:9: cannot take the address of nil
-			// 	./valast_test.go:179:9: use of untyped nil
-			//
-			name: "nil_interface_pointer_bug",
+			name: "ptr_to_nil_interface",
 			input: &struct {
 				v *test.Bazer
 			}{v: &nilInterfacePointerBug},

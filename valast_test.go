@@ -743,6 +743,24 @@ func TestAddrInterface(t *testing.T) {
 	}
 }
 
+func TestAddrInterface_golden(t *testing.T) {
+	// Confirms the AddrInterface calls in testdata/TestEdgeCases/ptr_to_* are valid.
+	_ = AddrInterface(&test.Baz{
+		Bam: (1.34 + 0i),
+	}, (*test.Bazer)(nil)).(*test.Bazer)
+
+	_ = AddrInterface(nil, (*test.Bazer)(nil)).(*test.Bazer)
+
+	_ = Addr(AddrInterface(&test.Baz{
+		Bam: (1.34 + 0i),
+	}, (*test.Bazer)(nil)).(*test.Bazer)).(**test.Bazer)
+
+	_ = Addr(AddrInterface(nil, (*test.Bazer)(nil)).(*test.Bazer)).(**test.Bazer)
+
+	_ = Addr(Addr(AddrInterface(nil,
+		(*test.Bazer)(nil)).(*test.Bazer)).(**test.Bazer)).(***test.Bazer)
+}
+
 func TestAddr_AddrInterface(t *testing.T) {
 	t.Parallel()
 	var bazer test.Bazer = test.NewBaz()

@@ -158,7 +158,9 @@ func Addr(v interface{}) interface{} {
 	// Create a slice with v in it so that we have an addressable value.
 	sliceType := reflect.SliceOf(vv.Type())
 	slice := reflect.MakeSlice(sliceType, 1, 1)
-	slice.Index(0).Set(vv)
+	if v != nil {
+		slice.Index(0).Set(vv)
+	}
 	return slice.Index(0).Addr().Interface()
 }
 
@@ -175,7 +177,9 @@ func AddrInterface(v, pointerToType interface{}) interface{} {
 	// Create a slice with v in it so that we have an addressable value.
 	sliceType := reflect.SliceOf(reflect.TypeOf(pointerToType).Elem())
 	slice := reflect.MakeSlice(sliceType, 1, 1)
-	slice.Index(0).Set(reflect.ValueOf(v))
+	if v != nil {
+		slice.Index(0).Set(reflect.ValueOf(v))
+	}
 	return slice.Index(0).Addr().Interface()
 }
 

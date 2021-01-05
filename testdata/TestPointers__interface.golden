@@ -1,0 +1,5 @@
+valast.AddrInterface(test.Bazer{&test.Baz{
+	Bam:  (1.34 + 0i),
+	zeta: &test.foo{bar: "hello"},
+}},
+	(*test.Bazer)(nil)).(*test.Bazer)

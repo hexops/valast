@@ -1,0 +1,1 @@
+valast.Addr(complex64((1 + 0i))).(*complex64)

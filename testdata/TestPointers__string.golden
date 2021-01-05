@@ -1,0 +1,1 @@
+valast.Addr("hello world").(*string)

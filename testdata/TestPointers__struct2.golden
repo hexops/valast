@@ -1,0 +1,5 @@
+valast.Addr(&struct {
+	A string
+}{A: "hello world"}).(**struct {
+	A string
+})

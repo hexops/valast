@@ -1,0 +1,1 @@
+valast.Addr(&map[string]string{"hello": "world"}).(**map[string]string)

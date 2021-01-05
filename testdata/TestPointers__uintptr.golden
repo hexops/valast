@@ -1,0 +1,1 @@
+valast.Addr(uintptr(1)).(*uintptr)

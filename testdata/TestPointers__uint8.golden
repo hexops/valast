@@ -1,0 +1,1 @@
+valast.Addr(uint8(1)).(*uint8)

@@ -697,6 +697,231 @@ func TestUnexportedInputs(t *testing.T) {
 	}
 }
 
+// TestPointers tests to ensure valast.Addr and & are used when appropriate.
+func TestPointers(t *testing.T) {
+	var (
+		boolValue                            = true
+		boolValuePointer                     = &boolValue
+		intValue                  int        = 1
+		intValuePointer                      = &intValue
+		intValuePointerPointer               = &intValuePointer
+		int8Value                 int8       = 1
+		int16Value                int16      = 1
+		int32Value                int32      = 1
+		int64Value                int64      = 1
+		uintValue                 uint       = 1
+		uint8Value                uint8      = 1
+		uint16Value               uint16     = 1
+		uint32Value               uint32     = 1
+		uint64Value               uint64     = 1
+		uintptrValue              uintptr    = 1
+		float32Value              float32    = 1
+		float64Value              float64    = 1
+		complex64Value            complex64  = 1
+		complex128Value           complex128 = 1
+		arrayValue                           = [1]float32{1}
+		arrayValuePointer                    = &arrayValue
+		interfaceValue                       = test.Bazer(test.NewBaz())
+		interfaceValuePointer                = &interfaceValue
+		mapValue                             = map[string]string{"hello": "world"}
+		mapValuePointer                      = &mapValue
+		pointerValue                         = &uintValue
+		pointerValuePointer                  = &pointerValue
+		sliceValue                           = []int{1, 2, 3}
+		sliceValuePointer                    = &sliceValue
+		stringValue                          = "hello world"
+		structValue                          = struct{ A string }{A: "hello world"}
+		structValuePointer                   = &structValue
+		unsafePointerValue                   = unsafe.Pointer(uintptr(0xdeadbeef))
+		unsafePointerValuePointer            = &unsafePointerValue
+	)
+	tests := []struct {
+		name  string
+		input interface{}
+		opt   *Options
+	}{
+		{
+			name:  "bool",
+			input: &boolValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "bool2",
+			input: &boolValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+
+		{
+			name:  "int",
+			input: &intValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "int2",
+			input: &intValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "int3",
+			input: &intValuePointerPointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "int8",
+			input: &int8Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "int16",
+			input: &int16Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "int32",
+			input: &int32Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "int64",
+			input: &int64Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "uint",
+			input: &uintValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "uint8",
+			input: &uint8Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "uint16",
+			input: &uint16Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "uint32",
+			input: &uint32Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "uint64",
+			input: &uint64Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "uintptr",
+			input: &uintptrValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "float32",
+			input: &float32Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "float64",
+			input: &float64Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "complex64",
+			input: &complex64Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "complex128",
+			input: &complex128Value,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "array",
+			input: &arrayValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "array2",
+			input: &arrayValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "interface",
+			input: &interfaceValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "interface2",
+			input: &interfaceValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "map",
+			input: &mapValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "map2",
+			input: &mapValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "pointer",
+			input: &pointerValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "pointer2", // ***uint
+			input: &pointerValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "slice",
+			input: &sliceValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "slice2",
+			input: &sliceValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "string",
+			input: &stringValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "struct",
+			input: &structValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "struct2",
+			input: &structValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "unsafe_pointer",
+			input: &unsafePointerValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "unsafe_pointer2",
+			input: &unsafePointerValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+	}
+	for _, tst := range tests {
+		tst := tst
+		t.Run(tst.name, func(t *testing.T) {
+			t.Parallel()
+			got := StringWithOptions(tst.input, tst.opt)
+			autogold.Equal(t, got)
+		})
+	}
+}
+
 func TestStringFormatting(t *testing.T) {
 	tests := []struct {
 		name  string

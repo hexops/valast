@@ -491,6 +491,23 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 		}
 		cycleDetector.pop(vv.Interface())
 
+		if !isPtrToInterface && !isAddressableKind(vv.Elem().Kind()) {
+			// Pointers to unaddressable values can be created with help from valast.Addr.
+			return Result{
+				AST: &ast.TypeAssertExpr{
+					X: &ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   ast.NewIdent("valast"),
+							Sel: ast.NewIdent("Addr"),
+						},
+						Args: []ast.Expr{elem.AST},
+					},
+					Type: ptrType.AST,
+				},
+				RequiresUnexported: ptrType.RequiresUnexported || elem.RequiresUnexported,
+				OmittedUnexported:  elem.OmittedUnexported,
+			}, nil
+		}
 		if isPtrToInterface {
 			// Pointers to interfaces can be created with help from valast.AddrInterface.
 			return Result{
@@ -635,6 +652,31 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 	default:
 		return Result{AST: nil}, &ErrInvalidType{Value: v.Interface()}
 	}
+}
+
+// isAddressableKind reports if v would be encoded as a Go literal which is addressable or not.
+// For example, &struct{}{}, &map[string]string{}, &[]string{} are all addressable - but &"string",
+// &5, &1.345, &myBool(true) are not.
+func isAddressableKind(v reflect.Kind) bool {
+	return v != reflect.Bool &&
+		v != reflect.Int &&
+		v != reflect.Int8 &&
+		v != reflect.Int16 &&
+		v != reflect.Int32 &&
+		v != reflect.Int64 &&
+		v != reflect.Uint &&
+		v != reflect.Uint8 &&
+		v != reflect.Uint16 &&
+		v != reflect.Uint32 &&
+		v != reflect.Uint64 &&
+		v != reflect.Uintptr &&
+		v != reflect.Float32 &&
+		v != reflect.Float64 &&
+		v != reflect.Complex64 &&
+		v != reflect.Complex128 &&
+		v != reflect.Ptr &&
+		v != reflect.String &&
+		v != reflect.UnsafePointer
 }
 
 // typeExpr returns an AST type expression for the value v.

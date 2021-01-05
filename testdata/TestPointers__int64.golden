@@ -1,0 +1,1 @@
+valast.Addr(int64(1)).(*int64)

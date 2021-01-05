@@ -145,6 +145,40 @@ func main() {
 	return err
 }
 
+// Addr returns a pointer to the given value.
+//
+// It is the only way to create a reference to certain values within a Go expression,
+// for example since &"hello" is illegal, it can instead be written in a single expression as:
+//
+// 	valast.Addr("hello").(*string)
+//
+func Addr(v interface{}) interface{} {
+	vv := reflect.ValueOf(v)
+
+	// Create a slice with v in it so that we have an addressable value.
+	sliceType := reflect.SliceOf(vv.Type())
+	slice := reflect.MakeSlice(sliceType, 1, 1)
+	slice.Index(0).Set(vv)
+	return slice.Index(0).Addr().Interface()
+}
+
+// AddrInterface returns a pointer to the given interface value, which is determined to be of type
+// T. For example, since &MyInterface(MyValue{}) is illegal, it can instead be written in a single
+// expression as:
+//
+// 	valast.AddrInterface(&MyValue{}, (*MyInterface)(nil))
+//
+// The second parameter should be a pointer to the interface type. This is needed because
+// reflect.ValueOf(&v).Type() returns *MyValue not MyInterface, due to reflect.ValueOf taking an
+// interface{} parameter and losing that type information.
+func AddrInterface(v, pointerToType interface{}) interface{} {
+	// Create a slice with v in it so that we have an addressable value.
+	sliceType := reflect.SliceOf(reflect.TypeOf(pointerToType).Elem())
+	slice := reflect.MakeSlice(sliceType, 1, 1)
+	slice.Index(0).Set(reflect.ValueOf(v))
+	return slice.Index(0).Addr().Interface()
+}
+
 func basicLit(vv reflect.Value, kind token.Token, builtinType string, v interface{}, opt *Options) (Result, error) {
 	typeExpr, err := typeExpr(vv.Type(), opt)
 	if err != nil {

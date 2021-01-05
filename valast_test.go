@@ -719,3 +719,41 @@ hello world hello world hello world hello world hello world hello world hello wo
 		})
 	}
 }
+
+func TestAddrInterface(t *testing.T) {
+	var bazer test.Bazer = test.NewBaz()
+	got := AddrInterface(bazer, (*test.Bazer)(nil)).(*test.Bazer)
+	if *got != bazer {
+		t.Fatal("*got != v")
+	}
+}
+
+func TestAddr_AddrInterface(t *testing.T) {
+	var bazer test.Bazer = test.NewBaz()
+	got := Addr(AddrInterface(bazer, (*test.Bazer)(nil)).(*test.Bazer)).(**test.Bazer)
+	if **got != bazer {
+		t.Fatal("*got != v")
+	}
+}
+
+func TestAddr_string(t *testing.T) {
+	got := Addr("hello").(*string)
+	if *got != "hello" {
+		t.Fatal("*got != v")
+	}
+}
+
+func TestAddr_int(t *testing.T) {
+	got := Addr(5).(*int)
+	if *got != 5 {
+		t.Fatal("*got != v")
+	}
+}
+
+func TestAddr_pointer(t *testing.T) {
+	x := 5
+	got := Addr(&x).(**int)
+	if **got != 5 {
+		t.Fatal("*got != v")
+	}
+}

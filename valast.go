@@ -469,7 +469,8 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.Ptr:
-		if vv.Elem().Kind() == reflect.Interface {
+		isPtrToNilInterface := vv.Elem().Kind() == reflect.Interface && vv.Elem().IsNil()
+		if !isPtrToNilInterface && vv.Elem().Kind() == reflect.Interface {
 			// Pointer to interface; cannot be created in a single expression.
 			return Result{}, &ErrPointerToInterface{Value: vv.Interface()}
 		}
@@ -477,7 +478,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 		if err != nil {
 			return Result{}, err
 		}
-		if vv.IsNil() {
+		if !isPtrToNilInterface && vv.IsNil() {
 			if opt.Unqualify {
 				return Result{AST: ast.NewIdent("nil")}, nil
 			}
@@ -501,6 +502,47 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 			return Result{}, err
 		}
 		cycleDetector.pop(vv.Interface())
+
+		if isPtrToNilInterface {
+			// Pointers to nil interfaces can be created with help from valast.AddrInterface.
+			return Result{
+				AST: &ast.TypeAssertExpr{
+					X: &ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   ast.NewIdent("valast"),
+							Sel: ast.NewIdent("AddrInterface"),
+						},
+						Args: []ast.Expr{
+							elem.AST,
+							&ast.CallExpr{
+								Fun:  &ast.ParenExpr{X: ptrType.AST},
+								Args: []ast.Expr{ast.NewIdent("nil")},
+							},
+						},
+					},
+					Type: ptrType.AST,
+				},
+				RequiresUnexported: ptrType.RequiresUnexported || elem.RequiresUnexported,
+				OmittedUnexported:  elem.OmittedUnexported,
+			}, nil
+		}
+		if vv.Elem().Kind() == reflect.Ptr {
+			// Pointers to pointers can be created with help from valast.Addr.
+			return Result{
+				AST: &ast.TypeAssertExpr{
+					X: &ast.CallExpr{
+						Fun: &ast.SelectorExpr{
+							X:   ast.NewIdent("valast"),
+							Sel: ast.NewIdent("Addr"),
+						},
+						Args: []ast.Expr{elem.AST},
+					},
+					Type: ptrType.AST,
+				},
+				RequiresUnexported: ptrType.RequiresUnexported || elem.RequiresUnexported,
+				OmittedUnexported:  elem.OmittedUnexported,
+			}, nil
+		}
 		return Result{
 			AST: &ast.UnaryExpr{
 				Op: token.AND,

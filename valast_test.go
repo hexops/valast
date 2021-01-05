@@ -228,6 +228,7 @@ func TestEdgeCases(t *testing.T) {
 		nilInterfacePointer                   = &nilInterface
 		nilInterfacePointerPointer            = &nilInterfacePointer
 		bazer                      test.Bazer = test.NewBaz()
+		bazerPointer                          = &bazer
 	)
 	tests := []struct {
 		name  string
@@ -239,6 +240,12 @@ func TestEdgeCases(t *testing.T) {
 			input: &struct {
 				v *test.Bazer
 			}{v: &bazer},
+		},
+		{
+			name: "ptr_to_ptr_to_interface",
+			input: &struct {
+				v **test.Bazer
+			}{v: &bazerPointer},
 		},
 		{
 			name: "ptr_to_nil_interface",

@@ -171,7 +171,6 @@ three`),
 	for _, tst := range tests {
 		tst := tst
 		t.Run(tst.name, func(t *testing.T) {
-			t.Parallel()
 			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
@@ -217,7 +216,6 @@ func TestRecursion(t *testing.T) {
 	for _, tst := range tests {
 		tst := tst
 		t.Run(tst.name, func(t *testing.T) {
-			t.Parallel()
 			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
@@ -279,7 +277,6 @@ func TestEdgeCases(t *testing.T) {
 	for _, tst := range tests {
 		tst := tst
 		t.Run(tst.name, func(t *testing.T) {
-			t.Parallel()
 			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
@@ -481,7 +478,6 @@ func TestExportedOnly_input(t *testing.T) {
 	for _, tst := range tests {
 		tst := tst
 		t.Run(tst.name, func(t *testing.T) {
-			t.Parallel()
 			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
@@ -522,7 +518,6 @@ func TestExportedOnly_nested(t *testing.T) {
 	for _, tst := range tests {
 		tst := tst
 		t.Run(tst.name, func(t *testing.T) {
-			t.Parallel()
 			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
@@ -690,7 +685,6 @@ func TestUnexportedInputs(t *testing.T) {
 	for _, tst := range tests {
 		tst := tst
 		t.Run(tst.name, func(t *testing.T) {
-			t.Parallel()
 			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
@@ -915,7 +909,6 @@ func TestPointers(t *testing.T) {
 	for _, tst := range tests {
 		tst := tst
 		t.Run(tst.name, func(t *testing.T) {
-			t.Parallel()
 			got := StringWithOptions(tst.input, tst.opt)
 			autogold.Equal(t, got)
 		})
@@ -961,7 +954,6 @@ hello world hello world hello world hello world "hello" world hello world hello 
 	for _, tst := range tests {
 		tst := tst
 		t.Run(tst.name, func(t *testing.T) {
-			t.Parallel()
 			got := String(tst.input)
 			autogold.Equal(t, got)
 		})
@@ -969,7 +961,6 @@ hello world hello world hello world hello world "hello" world hello world hello 
 }
 
 func TestAddrInterface(t *testing.T) {
-	t.Parallel()
 	var bazer test.Bazer = test.NewBaz()
 	got := AddrInterface(bazer, (*test.Bazer)(nil)).(*test.Bazer)
 	if *got != bazer {
@@ -996,7 +987,6 @@ func TestAddrInterface_golden(t *testing.T) {
 }
 
 func TestAddr_AddrInterface(t *testing.T) {
-	t.Parallel()
 	var bazer test.Bazer = test.NewBaz()
 	got := Addr(AddrInterface(bazer, (*test.Bazer)(nil)).(*test.Bazer)).(**test.Bazer)
 	if **got != bazer {
@@ -1005,7 +995,6 @@ func TestAddr_AddrInterface(t *testing.T) {
 }
 
 func TestAddr_string(t *testing.T) {
-	t.Parallel()
 	got := Addr("hello").(*string)
 	if *got != "hello" {
 		t.Fatal("*got != v")
@@ -1013,7 +1002,6 @@ func TestAddr_string(t *testing.T) {
 }
 
 func TestAddr_int(t *testing.T) {
-	t.Parallel()
 	got := Addr(5).(*int)
 	if *got != 5 {
 		t.Fatal("*got != v")
@@ -1021,7 +1009,6 @@ func TestAddr_int(t *testing.T) {
 }
 
 func TestAddr_pointer(t *testing.T) {
-	t.Parallel()
 	x := 5
 	got := Addr(&x).(**int)
 	if **got != 5 {

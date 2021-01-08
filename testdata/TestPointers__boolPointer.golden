@@ -1,1 +1,0 @@
-valast.Addr(valast.Addr(true).(*bool)).(**bool)

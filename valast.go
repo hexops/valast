@@ -584,7 +584,9 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 		}, nil
 	case reflect.String:
 		s := v.String()
-		if len(s) > 40 && strings.Contains(s, "\n") && !strings.Contains(s, "`") {
+		wantRawStringLiteral := len(s) > 40 && strings.Contains(s, "\n")
+		wantRawStringLiteral = wantRawStringLiteral || strings.Contains(s, `"`)
+		if wantRawStringLiteral && !strings.Contains(s, "`") {
 			return basicLit(vv, token.STRING, "string", "`"+s+"`", opt.withUnqualify())
 		}
 		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt.withUnqualify())

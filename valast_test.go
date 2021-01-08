@@ -948,6 +948,15 @@ hello world hello world hello world hello world hello world hello world hello wo
 			name:  "long_multi_line_with_backticks",
 			input: "hello world hello world hello world hello world hello world hello world hello world hello world\n`hello world hello world hello world hello world hello world hello world hello world",
 		},
+		{
+			name:  "short_quotes",
+			input: `"hello" "world"`,
+		},
+		{
+			name: "long_multi_line_with_quotes",
+			input: `"hello world"! "hello world" hello world hello world hello world hello world hello world hello world
+hello world hello world hello world hello world "hello" world hello world hello world`,
+		},
 	}
 	for _, tst := range tests {
 		tst := tst

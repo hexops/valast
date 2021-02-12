@@ -7,10 +7,12 @@ import (
 	"go/format"
 	"go/token"
 	"io"
+	"os"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/shurcooL/go-goon/bypass"
 	"golang.org/x/tools/go/packages"
@@ -284,10 +286,25 @@ func (c *cycleDetector) pop(ptr interface{}) {
 // 	&foo{id: 123, bar: &foo{id: 123, bar: nil}}
 //
 func AST(v reflect.Value, opt *Options) (Result, error) {
-	return computeAST(v, opt, &cycleDetector{})
+	var prof *profiler
+	wantProfile, _ := strconv.ParseBool(os.Getenv("VALAST_PROFILE"))
+	if wantProfile {
+		prof = &profiler{}
+	}
+	r, err := computeASTProfiled(v, opt, &cycleDetector{}, prof)
+	prof.dump()
+	return r, err
 }
 
-func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Result, error) {
+func computeASTProfiled(v reflect.Value, opt *Options, cycleDetector *cycleDetector, profiler *profiler) (Result, error) {
+	profiler.push(v)
+	start := time.Now()
+	r, err := computeAST(v, opt, cycleDetector, profiler)
+	profiler.pop(start)
+	return r, err
+}
+
+func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, profiler *profiler) (Result, error) {
 	if opt == nil {
 		opt = &Options{}
 	}
@@ -359,7 +376,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 			requiresUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
-			elem, err := computeAST(vv.Index(i), opt.withUnqualify(), cycleDetector)
+			elem, err := computeASTProfiled(vv.Index(i), opt.withUnqualify(), cycleDetector, profiler)
 			if err != nil {
 				return Result{}, err
 			}
@@ -387,9 +404,9 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 			}, nil
 		}
 		if opt.Unqualify {
-			return computeAST(unexported(vv.Elem()), opt.withUnqualify(), cycleDetector)
+			return computeASTProfiled(unexported(vv.Elem()), opt.withUnqualify(), cycleDetector, profiler)
 		}
-		v, err := computeAST(unexported(vv.Elem()), opt, cycleDetector)
+		v, err := computeASTProfiled(unexported(vv.Elem()), opt, cycleDetector, profiler)
 		if err != nil {
 			return Result{}, err
 		}
@@ -415,7 +432,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 		})
 		for _, key := range keys {
 			value := vv.MapIndex(key)
-			k, err := computeAST(key, opt.withUnqualify(), cycleDetector)
+			k, err := computeASTProfiled(key, opt.withUnqualify(), cycleDetector, profiler)
 			if err != nil {
 				return Result{}, err
 			}
@@ -429,7 +446,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 			if k.OmittedUnexported {
 				omittedUnexported = true
 			}
-			v, err := computeAST(value, opt.withUnqualify(), cycleDetector)
+			v, err := computeASTProfiled(value, opt.withUnqualify(), cycleDetector, profiler)
 			if err != nil {
 				return Result{}, err
 			}
@@ -485,7 +502,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 			// cyclic data structure detected
 			return Result{AST: ast.NewIdent("nil")}, nil
 		}
-		elem, err := computeAST(vv.Elem(), opt, cycleDetector)
+		elem, err := computeASTProfiled(vv.Elem(), opt, cycleDetector, profiler)
 		if err != nil {
 			return Result{}, err
 		}
@@ -562,7 +579,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 			requiresUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
-			elem, err := computeAST(vv.Index(i), opt.withUnqualify(), cycleDetector)
+			elem, err := computeASTProfiled(vv.Index(i), opt.withUnqualify(), cycleDetector, profiler)
 			if err != nil {
 				return Result{}, err
 			}
@@ -599,7 +616,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector) (Re
 			if unexported(v.Field(i)).IsZero() {
 				continue
 			}
-			value, err := computeAST(unexported(v.Field(i)), opt.withUnqualify(), cycleDetector)
+			value, err := computeASTProfiled(unexported(v.Field(i)), opt.withUnqualify(), cycleDetector, profiler)
 			if err != nil {
 				return Result{}, err
 			}
@@ -944,5 +961,39 @@ func valueLess(i, j reflect.Value) bool {
 	default:
 		// never here
 		return true
+	}
+}
+
+type profiler struct {
+	stack                 []reflect.Value
+	invertedStackMessages []string
+}
+
+func (p *profiler) push(v reflect.Value) {
+	if p == nil {
+		return
+	}
+	p.stack = append(p.stack, v)
+}
+
+func (p *profiler) pop(startTime time.Time) {
+	if p == nil {
+		return
+	}
+	d := time.Since(startTime)
+	v := p.stack[len(p.stack)-1].Interface()
+	p.stack = p.stack[:len(p.stack)-1]
+	stackSize := len(p.stack)
+	msg := fmt.Sprintf("%s%vns: %T\n", strings.Repeat("  ", stackSize), d.Nanoseconds(), v)
+	p.invertedStackMessages = append(p.invertedStackMessages, msg)
+}
+
+func (p *profiler) dump() {
+	if p == nil {
+		return
+	}
+	fmt.Println("valast: profile")
+	for i := len(p.invertedStackMessages) - 1; i > 0; i-- {
+		fmt.Print(p.invertedStackMessages[i])
 	}
 }

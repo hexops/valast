@@ -1015,3 +1015,16 @@ func TestAddr_pointer(t *testing.T) {
 		t.Fatal("*got != v")
 	}
 }
+
+func BenchmarkComplexType(b *testing.B) {
+	v := test.ComplexNode{
+		Left: &test.ComplexNode{
+			Child: &test.ComplexNodeChild{
+				Siblings: []*test.ComplexNode{nil, nil, nil},
+			},
+		},
+	}
+	for n := 0; n < b.N; n++ {
+		_ = String(v)
+	}
+}

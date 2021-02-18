@@ -185,8 +185,8 @@ func AddrInterface(v, pointerToType interface{}) interface{} {
 	return slice.Index(0).Addr().Interface()
 }
 
-func basicLit(vv reflect.Value, kind token.Token, builtinType string, v interface{}, opt *Options) (Result, error) {
-	typeExpr, err := typeExpr(vv.Type(), opt)
+func basicLit(vv reflect.Value, kind token.Token, builtinType string, v interface{}, opt *Options, typeExprCache typeExprCache) (Result, error) {
+	typeExpr, err := typeExpr(vv.Type(), opt, typeExprCache)
 	if err != nil {
 		return Result{}, err
 	}
@@ -266,20 +266,20 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 	if wantProfile {
 		prof = &profiler{}
 	}
-	r, err := computeASTProfiled(v, opt, &cycleDetector{}, prof)
+	r, err := computeASTProfiled(v, opt, &cycleDetector{}, prof, typeExprCache{})
 	prof.dump()
 	return r, err
 }
 
-func computeASTProfiled(v reflect.Value, opt *Options, cycleDetector *cycleDetector, profiler *profiler) (Result, error) {
+func computeASTProfiled(v reflect.Value, opt *Options, cycleDetector *cycleDetector, profiler *profiler, typeExprCache typeExprCache) (Result, error) {
 	profiler.push(v)
 	start := time.Now()
-	r, err := computeAST(v, opt, cycleDetector, profiler)
+	r, err := computeAST(v, opt, cycleDetector, profiler, typeExprCache)
 	profiler.pop(start)
 	return r, err
 }
 
-func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, profiler *profiler) (Result, error) {
+func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, profiler *profiler, typeExprCache typeExprCache) (Result, error) {
 	if opt == nil {
 		opt = &Options{}
 	}
@@ -298,7 +298,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 	vv := unexported(v)
 	switch vv.Kind() {
 	case reflect.Bool:
-		boolType, err := typeExpr(vv.Type(), opt)
+		boolType, err := typeExpr(vv.Type(), opt, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -316,42 +316,42 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			RequiresUnexported: boolType.RequiresUnexported,
 		}, nil
 	case reflect.Int:
-		return basicLit(vv, token.INT, "int", v, opt)
+		return basicLit(vv, token.INT, "int", v, opt, typeExprCache)
 	case reflect.Int8:
-		return basicLit(vv, token.INT, "int8", v, opt)
+		return basicLit(vv, token.INT, "int8", v, opt, typeExprCache)
 	case reflect.Int16:
-		return basicLit(vv, token.INT, "int16", v, opt)
+		return basicLit(vv, token.INT, "int16", v, opt, typeExprCache)
 	case reflect.Int32:
-		return basicLit(vv, token.INT, "int32", v, opt)
+		return basicLit(vv, token.INT, "int32", v, opt, typeExprCache)
 	case reflect.Int64:
-		return basicLit(vv, token.INT, "int64", v, opt)
+		return basicLit(vv, token.INT, "int64", v, opt, typeExprCache)
 	case reflect.Uint:
-		return basicLit(vv, token.INT, "uint", v, opt)
+		return basicLit(vv, token.INT, "uint", v, opt, typeExprCache)
 	case reflect.Uint8:
-		return basicLit(vv, token.INT, "uint8", v, opt)
+		return basicLit(vv, token.INT, "uint8", v, opt, typeExprCache)
 	case reflect.Uint16:
-		return basicLit(vv, token.INT, "uint16", v, opt)
+		return basicLit(vv, token.INT, "uint16", v, opt, typeExprCache)
 	case reflect.Uint32:
-		return basicLit(vv, token.INT, "uint32", v, opt)
+		return basicLit(vv, token.INT, "uint32", v, opt, typeExprCache)
 	case reflect.Uint64:
-		return basicLit(vv, token.INT, "uint64", v, opt)
+		return basicLit(vv, token.INT, "uint64", v, opt, typeExprCache)
 	case reflect.Uintptr:
-		return basicLit(vv, token.INT, "uintptr", v, opt)
+		return basicLit(vv, token.INT, "uintptr", v, opt, typeExprCache)
 	case reflect.Float32:
-		return basicLit(vv, token.FLOAT, "float32", v, opt)
+		return basicLit(vv, token.FLOAT, "float32", v, opt, typeExprCache)
 	case reflect.Float64:
-		return basicLit(vv, token.FLOAT, "float64", v, opt)
+		return basicLit(vv, token.FLOAT, "float64", v, opt, typeExprCache)
 	case reflect.Complex64:
-		return basicLit(vv, token.FLOAT, "complex64", v, opt)
+		return basicLit(vv, token.FLOAT, "complex64", v, opt, typeExprCache)
 	case reflect.Complex128:
-		return basicLit(vv, token.FLOAT, "complex128", v, opt)
+		return basicLit(vv, token.FLOAT, "complex128", v, opt, typeExprCache)
 	case reflect.Array:
 		var (
 			elts               []ast.Expr
 			requiresUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
-			elem, err := computeASTProfiled(vv.Index(i), opt.withUnqualify(), cycleDetector, profiler)
+			elem, err := computeASTProfiled(vv.Index(i), opt.withUnqualify(), cycleDetector, profiler, typeExprCache)
 			if err != nil {
 				return Result{}, err
 			}
@@ -360,7 +360,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			}
 			elts = append(elts, elem.AST)
 		}
-		arrayType, err := typeExpr(vv.Type(), opt)
+		arrayType, err := typeExpr(vv.Type(), opt, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -379,13 +379,13 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			}, nil
 		}
 		if opt.Unqualify {
-			return computeASTProfiled(unexported(vv.Elem()), opt.withUnqualify(), cycleDetector, profiler)
+			return computeASTProfiled(unexported(vv.Elem()), opt.withUnqualify(), cycleDetector, profiler, typeExprCache)
 		}
-		v, err := computeASTProfiled(unexported(vv.Elem()), opt, cycleDetector, profiler)
+		v, err := computeASTProfiled(unexported(vv.Elem()), opt, cycleDetector, profiler, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}
-		interfaceType, err := typeExpr(vv.Type(), opt)
+		interfaceType, err := typeExpr(vv.Type(), opt, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -407,7 +407,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 		})
 		for _, key := range keys {
 			value := vv.MapIndex(key)
-			k, err := computeASTProfiled(key, opt.withUnqualify(), cycleDetector, profiler)
+			k, err := computeASTProfiled(key, opt.withUnqualify(), cycleDetector, profiler, typeExprCache)
 			if err != nil {
 				return Result{}, err
 			}
@@ -421,7 +421,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			if k.OmittedUnexported {
 				omittedUnexported = true
 			}
-			v, err := computeASTProfiled(value, opt.withUnqualify(), cycleDetector, profiler)
+			v, err := computeASTProfiled(value, opt.withUnqualify(), cycleDetector, profiler, typeExprCache)
 			if err != nil {
 				return Result{}, err
 			}
@@ -440,7 +440,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 				Value: v.AST,
 			})
 		}
-		mapType, err := typeExpr(vv.Type(), opt)
+		mapType, err := typeExpr(vv.Type(), opt, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -453,7 +453,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.Ptr:
-		ptrType, err := typeExpr(vv.Type(), opt)
+		ptrType, err := typeExpr(vv.Type(), opt, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -477,7 +477,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			// cyclic data structure detected
 			return Result{AST: ast.NewIdent("nil")}, nil
 		}
-		elem, err := computeASTProfiled(vv.Elem(), opt, cycleDetector, profiler)
+		elem, err := computeASTProfiled(vv.Elem(), opt, cycleDetector, profiler, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -554,7 +554,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			requiresUnexported bool
 		)
 		for i := 0; i < vv.Len(); i++ {
-			elem, err := computeASTProfiled(vv.Index(i), opt.withUnqualify(), cycleDetector, profiler)
+			elem, err := computeASTProfiled(vv.Index(i), opt.withUnqualify(), cycleDetector, profiler, typeExprCache)
 			if err != nil {
 				return Result{}, err
 			}
@@ -563,7 +563,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			}
 			elts = append(elts, elem.AST)
 		}
-		sliceType, err := typeExpr(vv.Type(), opt)
+		sliceType, err := typeExpr(vv.Type(), opt, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -579,9 +579,9 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 		wantRawStringLiteral := len(s) > 40 && strings.Contains(s, "\n")
 		wantRawStringLiteral = wantRawStringLiteral || strings.Contains(s, `"`)
 		if wantRawStringLiteral && !strings.Contains(s, "`") {
-			return basicLit(vv, token.STRING, "string", "`"+s+"`", opt.withUnqualify())
+			return basicLit(vv, token.STRING, "string", "`"+s+"`", opt.withUnqualify(), typeExprCache)
 		}
-		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt.withUnqualify())
+		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt.withUnqualify(), typeExprCache)
 	case reflect.Struct:
 		var (
 			structValue                           []ast.Expr
@@ -591,7 +591,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			if unexported(v.Field(i)).IsZero() {
 				continue
 			}
-			value, err := computeASTProfiled(unexported(v.Field(i)), opt.withUnqualify(), cycleDetector, profiler)
+			value, err := computeASTProfiled(unexported(v.Field(i)), opt.withUnqualify(), cycleDetector, profiler, typeExprCache)
 			if err != nil {
 				return Result{}, err
 			}
@@ -610,7 +610,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 				Value: value.AST,
 			})
 		}
-		structType, err := typeExpr(vv.Type(), opt)
+		structType, err := typeExpr(vv.Type(), opt, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -626,7 +626,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			OmittedUnexported:  omittedUnexported,
 		}, nil
 	case reflect.UnsafePointer:
-		unsafePointerType, err := typeExpr(vv.Type(), opt)
+		unsafePointerType, err := typeExpr(vv.Type(), opt, typeExprCache)
 		if err != nil {
 			return Result{}, err
 		}

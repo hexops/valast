@@ -7,8 +7,48 @@ import (
 	"reflect"
 )
 
+type cacheKeyOptions struct {
+	Unqualify    bool
+	PackagePath  string
+	PackageName  string
+	ExportedOnly bool
+}
+
+type cacheKey struct {
+	v   reflect.Type
+	opt cacheKeyOptions
+}
+
+func newCacheKey(v reflect.Type, opt *Options) cacheKey {
+	return cacheKey{v: v, opt: cacheKeyOptions{
+		Unqualify:    opt.Unqualify,
+		PackagePath:  opt.PackagePath,
+		PackageName:  opt.PackageName,
+		ExportedOnly: opt.ExportedOnly,
+	}}
+}
+
+type typeExprCache map[cacheKey]Result
+
 // typeExpr returns an AST type expression for the value v.
-func typeExpr(v reflect.Type, opt *Options) (Result, error) {
+//
+// It is cached to avoid building type expressions again for types we've already seen, which can
+// get quite complex (see BenchmarkComplexType.)
+func typeExpr(v reflect.Type, opt *Options, cache typeExprCache) (Result, error) {
+	key := newCacheKey(v, opt)
+	if cached, ok := cache[key]; ok {
+		return cached, nil
+	}
+
+	result, err := uncachedTypeExpr(v, opt, cache)
+	if err != nil {
+		return Result{}, err
+	}
+	cache[key] = result
+	return result, nil
+}
+
+func uncachedTypeExpr(v reflect.Type, opt *Options, cache typeExprCache) (Result, error) {
 	if v.Kind() != reflect.UnsafePointer && v.Name() != "" {
 		pkgPath := v.PkgPath()
 		if pkgPath != "" && pkgPath != opt.PackagePath {
@@ -30,7 +70,7 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 	}
 	switch v.Kind() {
 	case reflect.Array:
-		elemType, err := typeExpr(v.Elem(), opt)
+		elemType, err := typeExpr(v.Elem(), opt, cache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -46,7 +86,7 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 		var requiresUnexported bool
 		for i := 0; i < v.NumMethod(); i++ {
 			method := v.Method(i)
-			methodType, err := typeExpr(method.Type, opt)
+			methodType, err := typeExpr(method.Type, opt, cache)
 			if err != nil {
 				return Result{}, err
 			}
@@ -70,7 +110,7 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 		)
 		for i := 0; i < v.NumIn(); i++ {
 			param := v.In(i)
-			paramType, err := typeExpr(param, opt)
+			paramType, err := typeExpr(param, opt, cache)
 			if err != nil {
 				return Result{}, err
 			}
@@ -84,7 +124,7 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 		var results []*ast.Field
 		for i := 0; i < v.NumOut(); i++ {
 			result := v.Out(i)
-			resultType, err := typeExpr(result, opt)
+			resultType, err := typeExpr(result, opt, cache)
 			if err != nil {
 				return Result{}, err
 			}
@@ -103,11 +143,11 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: requiresUnexported,
 		}, nil
 	case reflect.Map:
-		keyType, err := typeExpr(v.Key(), opt)
+		keyType, err := typeExpr(v.Key(), opt, cache)
 		if err != nil {
 			return Result{}, err
 		}
-		valueType, err := typeExpr(v.Elem(), opt)
+		valueType, err := typeExpr(v.Elem(), opt, cache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -119,7 +159,7 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: keyType.RequiresUnexported || valueType.RequiresUnexported,
 		}, nil
 	case reflect.Ptr:
-		ptrType, err := typeExpr(v.Elem(), opt)
+		ptrType, err := typeExpr(v.Elem(), opt, cache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -128,7 +168,7 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 			RequiresUnexported: ptrType.RequiresUnexported,
 		}, nil
 	case reflect.Slice:
-		elemType, err := typeExpr(v.Elem(), opt)
+		elemType, err := typeExpr(v.Elem(), opt, cache)
 		if err != nil {
 			return Result{}, err
 		}
@@ -143,7 +183,7 @@ func typeExpr(v reflect.Type, opt *Options) (Result, error) {
 		)
 		for i := 0; i < v.NumField(); i++ {
 			field := v.Field(i)
-			fieldType, err := typeExpr(field.Type, opt)
+			fieldType, err := typeExpr(field.Type, opt, cache)
 			if err != nil {
 				return Result{}, err
 			}

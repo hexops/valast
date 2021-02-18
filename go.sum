@@ -40,5 +40,5 @@ golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8T
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/errgo.v2 v2.1.0/go.mod h1:hNsd1EY+bozCKY1Ytp96fpM3vjJbqLJn88ws8XvfDNI=
-mvdan.cc/gofumpt v0.0.0-20210102134722-7ed9b835dfb3 h1:zAcGuFfom20UH1WLQ/gZZjUNZ499jb9SSqkHqnjRqaM=
-mvdan.cc/gofumpt v0.0.0-20210102134722-7ed9b835dfb3/go.mod h1:yXG1r1WqZVKWbVRtBWKWX9+CxGYfA51nSomhM0woR48=
+mvdan.cc/gofumpt v0.0.0-20210107193838-d24d34e18d44 h1:7f9MST3yT/rcobqRRclyjMvnDyjkkjg+EAzBjZ+TLdg=
+mvdan.cc/gofumpt v0.0.0-20210107193838-d24d34e18d44/go.mod h1:yXG1r1WqZVKWbVRtBWKWX9+CxGYfA51nSomhM0woR48=

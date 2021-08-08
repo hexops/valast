@@ -1016,6 +1016,22 @@ func TestAddr_pointer(t *testing.T) {
 	}
 }
 
+func TestNestedAddr_int64InStruct(t *testing.T) {
+	type str struct {
+		ExpirationSeconds *int64
+	}
+	i64 := int64(3607)
+	got := str{
+		ExpirationSeconds: &i64,
+	}
+
+	test_str := String(got)
+	expected := "valast.str{ExpirationSeconds: valast.Addr(int64(3607)).(*int64)}"
+	if test_str != expected {
+		t.Fatal("got != v")
+	}
+}
+
 func BenchmarkComplexType(b *testing.B) {
 	v := test.ComplexNode{
 		Left: &test.ComplexNode{

@@ -230,6 +230,9 @@ type Result struct {
 	// RequiresUnexported indicates if the AST requires access to unexported types/values outside
 	// of the package specified in the Options, and is thus invalid code.
 	RequiresUnexported bool
+
+	// Packages returns the lsit of packages that are used in the AST.
+	Packages []string
 }
 
 // AST converts the given value into its equivalent Go AST expression.
@@ -261,12 +264,6 @@ type Result struct {
 // 	&foo{id: 123, bar: &foo{id: 123, bar: nil}}
 //
 func AST(v reflect.Value, opt *Options) (Result, error) {
-	r, _, err := ASTWithPackages(v, opt)
-	return r, err
-}
-
-// ASTWithPackages returns the same values of AST and also returns a list of packages required to import.
-func ASTWithPackages(v reflect.Value, opt *Options) (Result, []string, error) {
 	var prof *profiler
 	wantProfile, _ := strconv.ParseBool(os.Getenv("VALAST_PROFILE"))
 	if wantProfile {
@@ -284,7 +281,9 @@ func ASTWithPackages(v reflect.Value, opt *Options) (Result, []string, error) {
 	}
 	sort.Strings(packages)
 
-	return r, packages, err
+	r.Packages = packages
+
+	return r, err
 }
 
 func computeASTProfiled(v reflect.Value, opt *Options, cycleDetector *cycleDetector, profiler *profiler, typeExprCache typeExprCache, packagesFound map[string]bool) (Result, error) {

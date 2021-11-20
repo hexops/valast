@@ -273,7 +273,7 @@ func AST(v reflect.Value, opt *Options) (Result, error) {
 	r, err := computeASTProfiled(v, opt, &cycleDetector{}, prof, typeExprCache{}, packagesFound)
 	prof.dump()
 
-	for k, _ := range packagesFound {
+	for k := range packagesFound {
 		if k != "" {
 			r.Packages = append(r.Packages, k)
 		}

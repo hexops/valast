@@ -231,7 +231,7 @@ type Result struct {
 	// of the package specified in the Options, and is thus invalid code.
 	RequiresUnexported bool
 
-	// Packages returns the list of packages that are used in the AST.
+	// Packages is the list of packages that are used in the AST.
 	Packages []string
 }
 

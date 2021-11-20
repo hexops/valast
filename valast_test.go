@@ -1031,6 +1031,32 @@ func TestPackages(t *testing.T) {
 	}
 }
 
+func TestIssue15_addr_values_must_be_qualified(t *testing.T) {
+	f32 := float32(3607)
+	i32 := int32(3607)
+	i64 := int64(3607)
+	u32 := uint32(3607)
+	u64 := uint64(3607)
+	i := int(3607)
+	u := uint(3607)
+	str := "foobar"
+	f64NonInteger := 3.14
+	input := struct {
+		a *float32
+		b *int32
+		c *int64
+		d *uint32
+		e *uint64
+		f *int
+		g *uint
+		h *string
+		i *float64
+	}{&f32, &i32, &i64, &u32, &u64, &i, &u, &str, &f64NonInteger}
+
+	got := String(input)
+	autogold.Equal(t, got)
+}
+
 func BenchmarkComplexType(b *testing.B) {
 	v := test.ComplexNode{
 		Left: &test.ComplexNode{

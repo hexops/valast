@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"go/token"
 	"io"
+	"math"
 	"os"
 	"reflect"
 	"sort"
@@ -490,13 +491,17 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			// cyclic data structure detected
 			return Result{AST: ast.NewIdent("nil")}, nil
 		}
-		elem, err := computeASTProfiled(vv.Elem(), opt, cycleDetector, profiler, typeExprCache, packagesFound)
-		if err != nil {
-			return Result{}, err
-		}
-		cycleDetector.pop(vv.Interface())
 
 		if !isPtrToInterface && !isAddressableKind(vv.Elem().Kind()) {
+			if opt.Unqualify && literalNeedsQualification(vv.Elem()) {
+				opt.Unqualify = false // the value must have qualification
+			}
+			elem, err := computeASTProfiled(vv.Elem(), opt, cycleDetector, profiler, typeExprCache, packagesFound)
+			if err != nil {
+				return Result{}, err
+			}
+			cycleDetector.pop(vv.Interface())
+
 			// Pointers to unaddressable values can be created with help from valast.Addr.
 			packagesFound["github.com/hexops/valast"] = true
 			return Result{
@@ -514,6 +519,12 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 				OmittedUnexported:  elem.OmittedUnexported,
 			}, nil
 		}
+
+		elem, err := computeASTProfiled(vv.Elem(), opt, cycleDetector, profiler, typeExprCache, packagesFound)
+		if err != nil {
+			return Result{}, err
+		}
+		cycleDetector.pop(vv.Interface())
 		if isPtrToInterface {
 			// Pointers to interfaces can be created with help from valast.AddrInterface.
 			return Result{
@@ -660,6 +671,38 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 	default:
 		return Result{AST: nil}, &ErrInvalidType{Value: v.Interface()}
 	}
+}
+
+// literalNeedsQualification tells if a literal value needs qualification or not when initializing
+// a value of type `interface{}`, e.g. being passed into the valast.Addr() helper function.
+func literalNeedsQualification(v reflect.Value) bool {
+	k := v.Kind()
+
+	// Simple cases: Types whose literal values are always implicitly qualified
+	if k == reflect.Bool ||
+		k == reflect.String ||
+		k == reflect.Int ||
+		k == reflect.Array ||
+		k == reflect.Chan ||
+		k == reflect.Func ||
+		k == reflect.Interface ||
+		k == reflect.Map ||
+		k == reflect.Ptr ||
+		k == reflect.Slice ||
+		k == reflect.Struct ||
+		k == reflect.UnsafePointer {
+		return false
+	}
+
+	// Floats. If passed to a function accepting an `interface{}` value:
+	//
+	// * A whole number `1234` would be considered an integer.
+	// * A non-whole number `3.14` would be considered `float64`
+	//
+	if k == reflect.Float64 && v.Float() != math.Trunc(v.Float()) {
+		return false // A float64 and not a whole number, so no qualification needed.
+	}
+	return true // needs qualification
 }
 
 func unexported(v reflect.Value) reflect.Value {

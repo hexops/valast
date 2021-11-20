@@ -1,0 +1,20 @@
+struct {
+	a *float32
+	b *int32
+	c *int64
+	d *uint32
+	e *uint64
+	f *int
+	g *uint
+	h *string
+	i *float64
+}{
+	a: valast.Addr(3607).(*float32), b: valast.Addr(3607).(*int32),
+	c: valast.Addr(3607).(*int64),
+	d: valast.Addr(3607).(*uint32),
+	e: valast.Addr(3607).(*uint64),
+	f: valast.Addr(3607).(*int),
+	g: valast.Addr(3607).(*uint),
+	h: valast.Addr("foobar").(*string),
+	i: valast.Addr(3.14).(*float64),
+}

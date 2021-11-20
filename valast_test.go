@@ -1,6 +1,7 @@
 package valast
 
 import (
+	"reflect"
 	"testing"
 	"unsafe"
 
@@ -1013,6 +1014,20 @@ func TestAddr_pointer(t *testing.T) {
 	got := Addr(&x).(**int)
 	if **got != 5 {
 		t.Fatal("*got != v")
+	}
+}
+
+func TestPackages(t *testing.T) {
+	foo := test.NewFoo()
+	res, err := AST(reflect.ValueOf(foo), nil)
+	if err != nil {
+		t.Fatal("error parsing foo for packages", err)
+	}
+	if len(res.Packages) != 1 {
+		t.Fatal("number of expected packages is 1")
+	}
+	if res.Packages[0] != "github.com/hexops/valast/internal/test" {
+		t.Fatal("unexpected package name detected")
 	}
 }
 

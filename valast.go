@@ -153,8 +153,7 @@ func main() {
 // It is the only way to create a reference to certain values within a Go expression,
 // for example since &"hello" is illegal, it can instead be written in a single expression as:
 //
-// 	valast.Addr("hello").(*string)
-//
+//	valast.Addr("hello").(*string)
 func Addr(v interface{}) interface{} {
 	vv := reflect.ValueOf(v)
 
@@ -171,7 +170,7 @@ func Addr(v interface{}) interface{} {
 // T. For example, since &MyInterface(MyValue{}) is illegal, it can instead be written in a single
 // expression as:
 //
-// 	valast.AddrInterface(&MyValue{}, (*MyInterface)(nil))
+//	valast.AddrInterface(&MyValue{}, (*MyInterface)(nil))
 //
 // The second parameter should be a pointer to the interface type. This is needed because
 // reflect.ValueOf(&v).Type() returns *MyValue not MyInterface, due to reflect.ValueOf taking an
@@ -240,20 +239,20 @@ type Result struct {
 //
 // The input must be one of these kinds:
 //
-// 	bool
-// 	int, int8, int16, int32, int64
-// 	uint, uint8, uint16, uint32, uint64
-// 	uintptr
-// 	float32, float64
-// 	complex64, complex128
-// 	array
-// 	interface
-// 	map
-// 	ptr
-// 	slice
-// 	string
-// 	struct
-// 	unsafe pointer
+//	bool
+//	int, int8, int16, int32, int64
+//	uint, uint8, uint16, uint32, uint64
+//	uintptr
+//	float32, float64
+//	complex64, complex128
+//	array
+//	interface
+//	map
+//	ptr
+//	slice
+//	string
+//	struct
+//	unsafe pointer
 //
 // The input type is reflect.Value instead of interface{}, specifically to allow converting
 // interfaces derived from struct fields or other reflection which would otherwise be lost if the
@@ -262,8 +261,7 @@ type Result struct {
 // Cyclic data structures will have their cyclic pointer values emitted twice, followed by a nil
 // value. e.g. for a structure `foo` with field `bar` which points to the original `foo`:
 //
-// 	&foo{id: 123, bar: &foo{id: 123, bar: nil}}
-//
+//	&foo{id: 123, bar: &foo{id: 123, bar: nil}}
 func AST(v reflect.Value, opt *Options) (Result, error) {
 	var prof *profiler
 	wantProfile, _ := strconv.ParseBool(os.Getenv("VALAST_PROFILE"))

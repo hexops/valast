@@ -41,6 +41,7 @@ The following are alternatives to Valast, making note of the differences we foun
 - [github.com/shurcooL/go-goon](https://github.com/shurcooL/go-goon) (based on go-spew)
     - Produces valid Go syntax, but not via a `go/ast`.
     - [Produces less idiomatic/terse results](https://github.com/shurcooL/go-goon/issues/11))
+    - Was deprecated in favor of valast.
 - [github.com/alecthomas/repr](https://github.com/alecthomas/repr)
     - Produces Go syntax, but not always valid code (e.g. can emit illegal `&23`, whereas Valast will emit a valid expression `valast.Addr(23).(int)`), not via a `go/ast`.
     - [Does not handle unexported fields/types/values.](https://github.com/alecthomas/repr/pull/13)

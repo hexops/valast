@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shurcooL/go-goon/bypass"
+	"github.com/hexops/valast/internal/bypass"
 	"golang.org/x/tools/go/packages"
 	gofumpt "mvdan.cc/gofumpt/format"
 )

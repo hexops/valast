@@ -30,9 +30,6 @@ var (
 	// flagKindWidth and flagKindShift indicate various bits that the
 	// reflect package uses internally to track kind information.
 	//
-	// flagRO indicates whether or not the value field of a reflect.Value is
-	// read-only.
-	//
 	// flagIndir indicates whether the value field of a reflect.Value is
 	// the actual data or a pointer to the data.
 	//
@@ -41,7 +38,6 @@ var (
 	// flags as necessary.
 	flagKindWidth = uintptr(5)
 	flagKindShift = flagKindWidth - 1
-	flagRO        = uintptr(1 << 0)
 	flagIndir     = uintptr(1 << 1)
 )
 
@@ -72,7 +68,6 @@ func init() {
 	flagKindMask := uintptr((1<<flagKindWidth - 1) << flagKindShift)
 	if (upfv&flagKindMask)>>flagKindShift != uintptr(reflect.Int) {
 		flagKindShift = 0
-		flagRO = 1 << 5
 		flagIndir = 1 << 6
 
 		// Commit adf9b30e5594 modified the flags to separate the
@@ -86,7 +81,6 @@ func init() {
 		// order has been changed to the newer format, so the flags are
 		// updated accordingly.
 		if upfv&flagIndir == 0 {
-			flagRO = 3 << 5
 			flagIndir = 1 << 7
 		}
 	}

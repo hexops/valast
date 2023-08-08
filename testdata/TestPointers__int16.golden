@@ -1,1 +1,1 @@
-valast.Addr(int16(1)).(*int16)
+valast.Ptr(int16(1))

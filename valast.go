@@ -148,6 +148,8 @@ func main() {
 	return err
 }
 
+// DEPRECATED: use valast.Ptr instead.
+//
 // Addr returns a pointer to the given value.
 //
 // It is the only way to create a reference to certain values within a Go expression,
@@ -503,15 +505,12 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			// Pointers to unaddressable values can be created with help from valast.Addr.
 			packagesFound["github.com/hexops/valast"] = true
 			return Result{
-				AST: &ast.TypeAssertExpr{
-					X: &ast.CallExpr{
-						Fun: &ast.SelectorExpr{
-							X:   ast.NewIdent("valast"),
-							Sel: ast.NewIdent("Addr"),
-						},
-						Args: []ast.Expr{elem.AST},
+				AST: &ast.CallExpr{
+					Fun: &ast.SelectorExpr{
+						X:   ast.NewIdent("valast"),
+						Sel: ast.NewIdent("Ptr"),
 					},
-					Type: ptrType.AST,
+					Args: []ast.Expr{elem.AST},
 				},
 				RequiresUnexported: ptrType.RequiresUnexported || elem.RequiresUnexported,
 				OmittedUnexported:  elem.OmittedUnexported,
@@ -549,15 +548,12 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 		if vv.Elem().Kind() == reflect.Ptr {
 			// Pointers to pointers can be created with help from valast.Addr.
 			return Result{
-				AST: &ast.TypeAssertExpr{
-					X: &ast.CallExpr{
-						Fun: &ast.SelectorExpr{
-							X:   ast.NewIdent("valast"),
-							Sel: ast.NewIdent("Addr"),
-						},
-						Args: []ast.Expr{elem.AST},
+				AST: &ast.CallExpr{
+					Fun: &ast.SelectorExpr{
+						X:   ast.NewIdent("valast"),
+						Sel: ast.NewIdent("Ptr"),
 					},
-					Type: ptrType.AST,
+					Args: []ast.Expr{elem.AST},
 				},
 				RequiresUnexported: ptrType.RequiresUnexported || elem.RequiresUnexported,
 				OmittedUnexported:  elem.OmittedUnexported,

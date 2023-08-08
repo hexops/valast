@@ -1,1 +1,1 @@
-valast.Addr(valast.Addr(valast.Addr(int(1)).(*int)).(**int)).(***int)
+valast.Ptr(valast.Ptr(valast.Ptr(int(1))))

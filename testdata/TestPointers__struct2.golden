@@ -1,5 +1,3 @@
-valast.Addr(&struct {
+valast.Ptr(&struct {
 	A string
-}{A: "hello world"}).(**struct {
-	A string
-})
+}{A: "hello world"})

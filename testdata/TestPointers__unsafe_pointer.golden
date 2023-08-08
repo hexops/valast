@@ -1,1 +1,1 @@
-valast.Addr(unsafe.Pointer(uintptr(0xdeadbeef))).(*unsafe.Pointer)
+valast.Ptr(unsafe.Pointer(uintptr(0xdeadbeef)))

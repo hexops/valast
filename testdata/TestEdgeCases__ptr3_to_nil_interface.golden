@@ -1,4 +1,4 @@
 &struct {
 	v ***test.Bazer
-}{v: valast.Addr(valast.Addr(valast.AddrInterface(nil,
-	(*test.Bazer)(nil)).(*test.Bazer)).(**test.Bazer)).(***test.Bazer)}
+}{v: valast.Ptr(valast.Ptr(valast.AddrInterface(nil,
+	(*test.Bazer)(nil)).(*test.Bazer)))}

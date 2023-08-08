@@ -1,1 +1,1 @@
-valast.Addr(float64(1)).(*float64)
+valast.Ptr(float64(1))

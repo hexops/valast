@@ -9,12 +9,12 @@ struct {
 	h *string
 	i *float64
 }{
-	a: valast.Addr(float32(3607)).(*float32), b: valast.Addr(int32(3607)).(*int32),
-	c: valast.Addr(int64(3607)).(*int64),
-	d: valast.Addr(uint32(3607)).(*uint32),
-	e: valast.Addr(uint64(3607)).(*uint64),
-	f: valast.Addr(3607).(*int),
-	g: valast.Addr(uint(3607)).(*uint),
-	h: valast.Addr("foobar").(*string),
-	i: valast.Addr(3.14).(*float64),
+	a: valast.Ptr(float32(3607)), b: valast.Ptr(int32(3607)),
+	c: valast.Ptr(int64(3607)),
+	d: valast.Ptr(uint32(3607)),
+	e: valast.Ptr(uint64(3607)),
+	f: valast.Ptr(3607),
+	g: valast.Ptr(uint(3607)),
+	h: valast.Ptr("foobar"),
+	i: valast.Ptr(3.14),
 }

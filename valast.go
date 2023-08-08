@@ -148,6 +148,8 @@ func main() {
 	return err
 }
 
+// DEPRECATED: use valast.Ptr instead.
+//
 // Addr returns a pointer to the given value.
 //
 // It is the only way to create a reference to certain values within a Go expression,
@@ -503,15 +505,12 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 			// Pointers to unaddressable values can be created with help from valast.Addr.
 			packagesFound["github.com/hexops/valast"] = true
 			return Result{
-				AST: &ast.TypeAssertExpr{
-					X: &ast.CallExpr{
-						Fun: &ast.SelectorExpr{
-							X:   ast.NewIdent("valast"),
-							Sel: ast.NewIdent("Addr"),
-						},
-						Args: []ast.Expr{elem.AST},
+				AST: &ast.CallExpr{
+					Fun: &ast.SelectorExpr{
+						X:   ast.NewIdent("valast"),
+						Sel: ast.NewIdent("Ptr"),
 					},
-					Type: ptrType.AST,
+					Args: []ast.Expr{elem.AST},
 				},
 				RequiresUnexported: ptrType.RequiresUnexported || elem.RequiresUnexported,
 				OmittedUnexported:  elem.OmittedUnexported,
@@ -549,18 +548,21 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 		if vv.Elem().Kind() == reflect.Ptr {
 			// Pointers to pointers can be created with help from valast.Addr.
 			return Result{
-				AST: &ast.TypeAssertExpr{
-					X: &ast.CallExpr{
-						Fun: &ast.SelectorExpr{
-							X:   ast.NewIdent("valast"),
-							Sel: ast.NewIdent("Addr"),
-						},
-						Args: []ast.Expr{elem.AST},
+				AST: &ast.CallExpr{
+					Fun: &ast.SelectorExpr{
+						X:   ast.NewIdent("valast"),
+						Sel: ast.NewIdent("Ptr"),
 					},
-					Type: ptrType.AST,
+					Args: []ast.Expr{elem.AST},
 				},
 				RequiresUnexported: ptrType.RequiresUnexported || elem.RequiresUnexported,
 				OmittedUnexported:  elem.OmittedUnexported,
+			}, nil
+		}
+		switch vv.Elem().Type() {
+		case reflect.TypeOf(time.Time{}):
+			return Result{
+				AST: pointifyASTExpr(elem.AST),
 			}, nil
 		}
 		return Result{
@@ -606,6 +608,15 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 		}
 		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt.withUnqualify(), typeExprCache)
 	case reflect.Struct:
+		// special handling for common structs from stdlib
+		// that only contain unexported fields
+		switch v.Type() {
+		case reflect.TypeOf(time.Time{}):
+			return Result{
+				AST: timeTypeASTExpr(v.Interface().(time.Time)),
+			}, nil
+		}
+
 		var (
 			structValue                           []ast.Expr
 			requiresUnexported, omittedUnexported bool
@@ -708,4 +719,42 @@ func unexported(v reflect.Value) reflect.Value {
 		return v
 	}
 	return bypass.UnsafeReflectValue(v)
+}
+
+// timeTypeASTExpr returns the AST expression equivalent of
+//
+// 	time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+func timeTypeASTExpr(t time.Time) ast.Expr {
+	return &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: "time"},
+			Sel: &ast.Ident{Name: "Date"},
+		},
+		Args: []ast.Expr{
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Year())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Month())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Day())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Hour())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Minute())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Second())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Nanosecond())},
+			&ast.SelectorExpr{
+				X:   &ast.Ident{Name: "time"},
+				Sel: &ast.Ident{Name: t.Location().String()},
+			},
+		},
+	}
+}
+
+// pointifyASTExpr wraps an expression in a call to the `Ptr` helper function.
+//
+//	valast.Ptr(//...)
+func pointifyASTExpr(e ast.Expr) ast.Expr {
+	return &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   ast.NewIdent("valast"),
+			Sel: ast.NewIdent("Ptr"),
+		},
+		Args: []ast.Expr{e},
+	}
 }

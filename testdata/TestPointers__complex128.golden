@@ -1,1 +1,1 @@
-valast.Addr(complex128((1 + 0i))).(*complex128)
+valast.Ptr(complex128((1 + 0i)))

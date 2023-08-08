@@ -613,7 +613,7 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt.withUnqualify(), typeExprCache)
 	case reflect.Struct:
 		// special handling for common structs from stdlib
-		// that only contiains unexported fields
+		// that only contain unexported fields
 		switch v.Type() {
 		case reflect.TypeOf(time.Time{}):
 			return Result{

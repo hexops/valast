@@ -3,6 +3,7 @@ package valast
 import (
 	"reflect"
 	"testing"
+	"time"
 	"unsafe"
 
 	"github.com/hexops/autogold"
@@ -167,6 +168,14 @@ three`),
 				"foo": 32,
 				"bar": 64,
 			},
+		},
+		{
+			name:  "time_utc",
+			input: time.Date(2016, 1, 2, 15, 4, 5, 0, time.UTC),
+		},
+		{
+			name:  "time_local",
+			input: time.Date(2016, 1, 2, 15, 4, 5, 0, time.Local),
 		},
 	}
 	for _, tst := range tests {
@@ -729,6 +738,8 @@ func TestPointers(t *testing.T) {
 		structValuePointer                   = &structValue
 		unsafePointerValue                   = unsafe.Pointer(uintptr(0xdeadbeef))
 		unsafePointerValuePointer            = &unsafePointerValue
+		timeUtcValue                         = time.Date(2016, 1, 2, 15, 4, 5, 0, time.UTC)
+		timeLocalValue                       = time.Date(2016, 1, 2, 15, 4, 5, 0, time.Local)
 	)
 	tests := []struct {
 		name  string
@@ -904,6 +915,16 @@ func TestPointers(t *testing.T) {
 		{
 			name:  "unsafe_pointer2",
 			input: &unsafePointerValuePointer,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "time_utc",
+			input: &timeUtcValue,
+			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
+		},
+		{
+			name:  "time_local",
+			input: &timeLocalValue,
 			opt:   &Options{PackageName: "valast", PackagePath: "github.com/hexops/valast"},
 		},
 	}

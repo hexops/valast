@@ -563,6 +563,12 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 				OmittedUnexported:  elem.OmittedUnexported,
 			}, nil
 		}
+		switch vv.Elem().Type() {
+		case reflect.TypeOf(time.Time{}):
+			return Result{
+				AST: pointifyASTExpr(elem.AST),
+			}, nil
+		}
 		return Result{
 			AST: &ast.UnaryExpr{
 				Op: token.AND,
@@ -606,6 +612,15 @@ func computeAST(v reflect.Value, opt *Options, cycleDetector *cycleDetector, pro
 		}
 		return basicLit(vv, token.STRING, "string", strconv.Quote(v.String()), opt.withUnqualify(), typeExprCache)
 	case reflect.Struct:
+		// special handling for common structs from stdlib
+		// that only contiains unexported fields
+		switch v.Type() {
+		case reflect.TypeOf(time.Time{}):
+			return Result{
+				AST: timeTypeASTExpr(v.Interface().(time.Time)),
+			}, nil
+		}
+
 		var (
 			structValue                           []ast.Expr
 			requiresUnexported, omittedUnexported bool
@@ -708,4 +723,42 @@ func unexported(v reflect.Value) reflect.Value {
 		return v
 	}
 	return bypass.UnsafeReflectValue(v)
+}
+
+// timeTypeASTExpr returns the AST expression equivalent of
+//
+// 	time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+func timeTypeASTExpr(t time.Time) ast.Expr {
+	return &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   &ast.Ident{Name: "time"},
+			Sel: &ast.Ident{Name: "Date"},
+		},
+		Args: []ast.Expr{
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Year())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Month())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Day())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Hour())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Minute())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Second())},
+			&ast.BasicLit{Kind: token.INT, Value: fmt.Sprintf("%d", t.Nanosecond())},
+			&ast.SelectorExpr{
+				X:   &ast.Ident{Name: "time"},
+				Sel: &ast.Ident{Name: t.Location().String()},
+			},
+		},
+	}
+}
+
+// pointifyASTExpr wraps an expression in a call to the `Ptr` helper function.
+//
+//	valast.Ptr(//...)
+func pointifyASTExpr(e ast.Expr) ast.Expr {
+	return &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X:   ast.NewIdent("valast"),
+			Sel: ast.NewIdent("Ptr"),
+		},
+		Args: []ast.Expr{e},
+	}
 }

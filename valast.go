@@ -65,12 +65,63 @@ func (o *Options) packagePathToName(path string) (string, error) {
 }
 
 // DefaultPackagePathToName loads the specified package from disk to determine the package name.
+// In environments where the `go` command is unavailable (e.g. WebAssembly or
+// the Go Playground), it falls back to guessing the name from the last
+// non-version segment of the import path.
 func DefaultPackagePathToName(path string) (string, error) {
 	pkgs, err := packages.Load(&packages.Config{Mode: packages.NeedName}, path)
-	if err != nil {
-		return "", err
+	if err == nil && len(pkgs) > 0 && pkgs[0].Name != "" {
+		return pkgs[0].Name, nil
 	}
-	return pkgs[0].Name, nil
+	return packagePathBasename(path), nil
+}
+
+// packagePathBasename returns the last non-version segment of an import path
+// (so example.com/foo/v2 -> foo). This matches the convention used by
+// gopls and is good enough for rendering, even if it isn't always the actual
+// package name.
+func packagePathBasename(path string) string {
+	for {
+		base := pathBase(path)
+		if !isVersionSegment(base) {
+			return base
+		}
+		parent := pathDir(path)
+		if parent == "" || parent == path {
+			return base
+		}
+		path = parent
+	}
+}
+
+func pathBase(p string) string {
+	for i := len(p) - 1; i >= 0; i-- {
+		if p[i] == '/' {
+			return p[i+1:]
+		}
+	}
+	return p
+}
+
+func pathDir(p string) string {
+	for i := len(p) - 1; i >= 0; i-- {
+		if p[i] == '/' {
+			return p[:i]
+		}
+	}
+	return ""
+}
+
+func isVersionSegment(s string) bool {
+	if len(s) < 2 || s[0] != 'v' {
+		return false
+	}
+	for _, c := range s[1:] {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // String converts the value v into the equivalent Go literal syntax.

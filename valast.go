@@ -193,8 +193,13 @@ func basicLit(vv reflect.Value, kind token.Token, builtinType string, v interfac
 	if err != nil {
 		return Result{}, err
 	}
+	// Named numeric types like time.Duration implement Stringer and
+	// fmt.Sprint hands that back ("1h0m0s") instead of the underlying
+	// integer literal, which then doesn't parse. Format from the
+	// reflect.Value's kind so the AST always carries a valid Go literal.
+	lit := formatBasicLit(vv, kind, v)
 	if opt.Unqualify && vv.Type().Name() == builtinType && vv.Type().PkgPath() == "" {
-		return Result{AST: ast.NewIdent(fmt.Sprint(v))}, nil
+		return Result{AST: ast.NewIdent(lit)}, nil
 	}
 	if opt.ExportedOnly && typeExpr.RequiresUnexported {
 		return Result{RequiresUnexported: true}, nil
@@ -202,10 +207,32 @@ func basicLit(vv reflect.Value, kind token.Token, builtinType string, v interfac
 	return Result{
 		AST: &ast.CallExpr{
 			Fun:  typeExpr.AST,
-			Args: []ast.Expr{ast.NewIdent(fmt.Sprint(v))},
+			Args: []ast.Expr{ast.NewIdent(lit)},
 		},
 		RequiresUnexported: typeExpr.RequiresUnexported,
 	}, nil
+}
+
+func formatBasicLit(vv reflect.Value, kind token.Token, v interface{}) string {
+	switch kind {
+	case token.INT:
+		switch vv.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return strconv.FormatInt(vv.Int(), 10)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			return strconv.FormatUint(vv.Uint(), 10)
+		}
+	case token.FLOAT:
+		switch vv.Kind() {
+		case reflect.Float32:
+			return strconv.FormatFloat(vv.Float(), 'g', -1, 32)
+		case reflect.Float64:
+			return strconv.FormatFloat(vv.Float(), 'g', -1, 64)
+		case reflect.Complex64, reflect.Complex128:
+			return fmt.Sprint(v)
+		}
+	}
+	return fmt.Sprint(v)
 }
 
 // ErrInvalidType describes that the value is of a type that cannot be converted to an AST.
